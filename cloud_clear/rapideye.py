@@ -7,24 +7,24 @@ import os
 class RapidEye(CloudClearBase):
     def __init__(self, tmp_dir, output_dir, aoi):
         super().__init__(tmp_dir, output_dir, aoi)
-        self.use_custom_cloud_score = True
+        #self.use_custom_cloud_score = True
         # Dark pixel threshold - adjust this number between 0.0-1.0 if needed
         # Higher values = more aggressive dark pixel masking
         self.dark_threshold = 0.05  # Default threshold (5% reflectance)
 
     def _mask_dark_pixels(self, scaled_data):
         """
-        Mask all dark pixels below the threshold.
+        Mask pixels based only on the red edge band (B4)
         Args:
             scaled_data: Image data already scaled to reflectance (0-1)
         Returns:
             Binary mask where 1=valid pixels, 0=dark pixels to be masked
         """
-        # Calculate mean brightness across all bands
-        mean_brightness = np.mean(scaled_data, axis=0)
-        
-        # Create mask (True = bright enough, False = too dark)
-        dark_mask = mean_brightness < self.dark_threshold
+        # use Red Edge band (B4, index 3)
+        red_edge_band = scaled_data[3:, :, :]
+
+        # Identify pixels below threshold in red edge band
+        dark_mask = red_edge_band < self.dark_threshold
         
         # Buffer the mask slightly to avoid edge artifacts
         buffered_mask = binary_dilation(dark_mask, iterations=2)
@@ -39,7 +39,7 @@ class RapidEye(CloudClearBase):
         blue = scaled_data[0, :, :]
         green = scaled_data[1, :, :]
         red = scaled_data[2, :, :]
-        nir = scaled_data[3, :, :]
+        nir = scaled_data[3, :, :]  # Switch?????
         rededge = scaled_data[4, :, :]
 
         score = np.ones_like(blue)  # Start with score=1 (clear)
@@ -58,42 +58,181 @@ class RapidEye(CloudClearBase):
         
         return score
 
-    def apply_udm_mask(self, udm_file, analytic_file):
-        """Apply either UDM mask or custom cloud score mask."""
+    def _scale_to_reflectance(self, analytic_file):
+        """
+        Reads and scales image data from an analytic file to reflectance (0-1)
+
+        Args:
+            analytic_file: Path to the input image file
+
+        Returns:
+            scaled_data (np.array): Reflectance-scaled image data
+            meta (dict): Metadata from the input file
+        """
         with rasterio.open(analytic_file) as src_analytic:
-            # Read data and scale to reflectance ONCE
+            # Read data
             raw_data = src_analytic.read()
-            scaled_data = raw_data.astype('float32') / 10000.0
             meta = src_analytic.meta.copy()
+            # Scale to reflectance
+            scaled_data = raw_data.astype('float32') / 10000.0
+            # Return scaled data and meta data
+            return scaled_data, meta
 
-        if self.use_custom_cloud_score:
-            # Calculate cloud score using scaled reflectance values
-            cloud_score = self._calculate_cloud_score(scaled_data)
-            cloud_mask = cloud_score > 0.05  # Cloud threshold
-            buffered_cloud_mask = binary_dilation(cloud_mask, iterations=3)
-            
-            # Get dark pixel mask using same scaled data
-            dark_pixel_mask = self._mask_dark_pixels(scaled_data)
-            
-            # Combine masks (1=clear, 0=cloudy or dark)
-            final_mask = np.logical_and(~buffered_cloud_mask, dark_pixel_mask)
-            mask = final_mask.astype('float32')
-        else:
-            # Original UDM-based masking
-            with rasterio.open(udm_file) as src_udm:
-                udm = src_udm.read(1)
-                unusable_mask = udm == 2
-                buffered_mask = binary_dilation(unusable_mask, iterations=3)
-                mask = np.where(buffered_mask, 0, 1)
 
-        # Apply mask to scaled data
+    def udm_mask(self, udm_file, analytic_file):
+        """
+        Applies the UDM mask to the analytic file and saves the masked image
+
+        Args:
+            udm_file (str): Path to the UDM file
+            analytic_file (str): Path to the input image file
+        Returns:
+            output_file (str): Path to the output file, masked image
+        """
+        # Read and scale analytic data
+        scaled_data, meta = self._scale_to_reflectance(analytic_file)
+
+        # Read UDM and generate binary mask
+        with rasterio.open(udm_file) as src_udm:
+            udm = src_udm.read(1)
+            usable_mask = udm == 2
+
+        # Invert mask: 1 = usable, 0 = masked
+        mask = np.where(usable_mask, 0, 1).astype('float32')
+
+        # Apply the mask to scaled data
         masked_data = scaled_data * mask[np.newaxis, :, :]
-        
-        # Save output
-        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', '_cleaned.tif'))
+
+        # Prepare output path and metadata
         meta.update({'dtype': 'float32'})
+        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
+
+        # Save result
         with rasterio.open(output_file, 'w', **meta) as dst:
             dst.write(masked_data.astype('float32'))
 
-        print(f"Processed file saved to: {output_file}")
+        print(f"UDM-only masked image saved to: {output_file}")
         return output_file
+
+
+    def udm_buffer_mask(self, udm_file, analytic_file, buffer_size = 3):
+        """
+        Applies the buffered UDM mask to the analytic file and saves the masked image
+        Args:
+            udm_file (str): Path to the UDM file
+            analytic_file (str): Path to the input image file
+            buffer_size (int): Buffer size to use for masking. Defaults to 3.
+        Returns:
+            output_file (str): Path to the output file, masked image
+        """
+        # Read and scale analytic data
+        scaled_data, meta = self._scale_to_reflectance(analytic_file)
+
+        # Read UDM file
+        with rasterio.open(udm_file) as src_udm:
+            udm = src_udm.read(1)
+
+        # Create unusable mask (UDM value of 2 means cloud/shadow/etc.)
+        unusable_mask = udm == 2
+
+        # Apply buffer
+        buffered_mask = binary_dilation(unusable_mask, iterations=buffer_size)
+
+        # Invert 1 = valid, 0 = masked out
+        mask = np.where(buffered_mask, 0, 1).astype('float32')
+
+        # Apply mask to image
+        masked_data = scaled_data * mask[np.newaxis, :, :]
+
+        # update metadata
+        meta.update({'dtype': 'float32'})
+        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_udm_buffer_cleaned.tif'))
+
+        # Save output
+        with rasterio.open(output_file, 'w', **meta) as dst:
+            dst.write(masked_data.astype('float32'))
+
+        print(f"UDM-buffered masked image saved to: {output_file}")
+        return output_file
+
+
+
+    def cs_mask(self, analytic_file):
+        """
+        Applies the custom cloud score mask to the analytic file and saves the masked image
+        Args:
+             analytic_file (str): Path to the input image file
+        Returns:
+            output_file (str): Path to the output file, masked image
+        """
+        # Read and scale analytic data
+        scaled_data, meta = self._scale_to_reflectance(analytic_file)
+
+        # Compute cloud score
+        cloud_score = self._calculate_cloud_score(scaled_data)
+
+        # Define threshold - pixels with score > 0.05 are considered cloudy
+        cloud_mask = cloud_score > 0.05
+
+        # Get dark pixel mask using scaled data
+        dark_pixel_mask = self._mask_dark_pixels(scaled_data)
+
+        # Combine Masks (1 = clear, 0 = cloudy or dark)
+        final_mask = np.logical_and(~cloud_mask, dark_pixel_mask).astype('float32')
+
+        # Apply final mask to scaled data
+        masked_data = scaled_data * final_mask[np.newaxis, :,:]
+
+        # Prepare output
+        meta.update({'dtype': 'float32'})
+        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_mask.tif'))
+
+        # Save the result
+        with rasterio.open(output_file, 'w', **meta) as dst:
+            dst.write(masked_data.astype('float32'))
+
+        print(f"Custom cloud-masked image saved to: {output_file}")
+        return output_file
+
+
+    def cs_buffer_mask(self, analytic_file, buffer_size = 3):
+        """
+        Applies the custom cloud score mask with a buffer to the analytic file and saves the masked image
+        Args:
+            analytic_file (str): Path to the input image file
+            buffer_size (int): Buffer size to use for masking. Defaults to 3.
+        Returns:
+            output_file (str): Path to the output file, masked image
+        """
+        # Read and scale analytic data
+        scaled_data, meta = self._scale_to_reflectance(analytic_file)
+
+        # Compute cloud score
+        cloud_score = self._calculate_cloud_score(scaled_data)
+
+        # Threshold - pixels with score > 0.05 are considered cloudy
+        cloud_mask = cloud_score > 0.05
+
+        # Buffer cloud mask
+        buffered_cloud_mask = binary_dilation(cloud_mask, iterations=buffer_size)
+
+        # Get dark pixel mask using scaled data
+        dark_pixel_mask = self._mask_dark_pixels(scaled_data)
+
+        # Combine masks
+        final_mask = np.logical_and(~buffered_cloud_mask, dark_pixel_mask).astype('float32')
+
+        # Apply mask
+        masked_data = scaled_data * final_mask[np.newaxis, :, :]
+
+        # Prepare output
+        meta.update({'dtype': 'float32'})
+        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_buffer_mask.tif'))
+
+        # Save the masked image
+        with rasterio.open(output_file, 'w', **meta) as dst:
+            dst.write(masked_data.astype('float32'))
+
+        print(f"Custom cloud masked image with buffer saved to: {output_file}")
+        return output_file
+

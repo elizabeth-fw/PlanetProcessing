@@ -7,9 +7,9 @@ from cloud_clear.rapideye import RapidEye
 from compositing import create_median_composite
 
 # Define directories
-base_dir = "/Users/belle/Desktop/Planet"
-output_base_dir = "/Users/belle/Desktop/Project/Output"
-aoi = gpd.read_file('/Users/belle/Desktop/Planet/aotea/aotea.shp').to_crs('EPSG:2193')
+base_dir = "/Users/brookeengland/Documents/Internship/Project/Planet/Planet Practice Files"
+output_base_dir = "/Users/brookeengland/Documents/Internship/Project/Planet Output"
+aoi = gpd.read_file('/Users/brookeengland/Documents/Internship/Project/Planet/aotea/aotea.shp').to_crs('EPSG:2193')
 
 # Create output subfolders
 os.makedirs(os.path.join(output_base_dir, "RapidEye"), exist_ok=True)
@@ -117,4 +117,4 @@ def create_composites(output_dir):
             print(f"Successfully created PlanetScope composite at {ps_output}")
 
 if __name__ == "__main__":
-    create_composites("/Users/belle/Desktop/Project/Output")
+    create_composites("/Users/brookeengland/Documents/Internship/Project/Planet Output")
