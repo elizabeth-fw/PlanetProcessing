@@ -7,7 +7,6 @@ import os
 class RapidEye(CloudClearBase):
     def __init__(self, tmp_dir, output_dir, aoi):
         super().__init__(tmp_dir, output_dir, aoi)
-        #self.use_custom_cloud_score = True
         # Dark pixel threshold - adjust this number between 0.0-1.0 if needed
         # Higher values = more aggressive dark pixel masking
         self.dark_threshold = 0.05  # Default threshold (5% reflectance)
@@ -21,7 +20,7 @@ class RapidEye(CloudClearBase):
             Binary mask where 1=valid pixels, 0=dark pixels to be masked
         """
         # use Red Edge band (B4, index 3)
-        red_edge_band = scaled_data[3:, :, :]
+        red_edge_band = scaled_data[3, :, :]
 
         # Identify pixels below threshold in red edge band
         dark_mask = red_edge_band < self.dark_threshold
@@ -39,8 +38,8 @@ class RapidEye(CloudClearBase):
         blue = scaled_data[0, :, :]
         green = scaled_data[1, :, :]
         red = scaled_data[2, :, :]
-        nir = scaled_data[3, :, :]  # Switch?????
-        rededge = scaled_data[4, :, :]
+        rededge = scaled_data[3, :, :]
+        nir = scaled_data[4, :, :]
 
         score = np.ones_like(blue)  # Start with score=1 (clear)
         
@@ -181,11 +180,11 @@ class RapidEye(CloudClearBase):
         final_mask = np.logical_and(~cloud_mask, dark_pixel_mask).astype('float32')
 
         # Apply final mask to scaled data
-        masked_data = scaled_data * final_mask[np.newaxis, :,:]
+        masked_data = scaled_data * final_mask
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_mask.tif'))
+        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif'))
 
         # Save the result
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -223,11 +222,11 @@ class RapidEye(CloudClearBase):
         final_mask = np.logical_and(~buffered_cloud_mask, dark_pixel_mask).astype('float32')
 
         # Apply mask
-        masked_data = scaled_data * final_mask[np.newaxis, :, :]
+        masked_data = scaled_data * final_mask
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_buffer_mask.tif'))
+        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_buffer_mask_cleaned.tif'))
 
         # Save the masked image
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -235,4 +234,57 @@ class RapidEye(CloudClearBase):
 
         print(f"Custom cloud masked image with buffer saved to: {output_file}")
         return output_file
+
+    def combined_mask(self, analytic_file, udm_file, combo_type="udm_cs", buffer_size=3):
+        """
+        Applies a combination of UDM and CS masking strategies
+
+        combo_type:
+            "udm_cs" -> UDM + CS
+            "bufferudm_cs"  -> buffered UDM + CS
+            "udm_buffercs" -> UDM + buffered CS
+            "bufferudm_buffercs" -> buffered UDM + buffered CS
+        """
+        scaled_data, meta = self._scale_to_reflectance(analytic_file)
+
+        # ---- Get UDM mask ----
+        with rasterio.open(udm_file) as src_udm:
+            udm = src_udm.read(1)
+
+        unusable_mask = udm == 2
+
+        if "bufferudm" in combo_type:
+            unusable_mask = binary_dilation(unusable_mask, iterations=buffer_size)
+
+        udm_mask = np.where(unusable_mask, 0, 1).astype('float32') # 1 = good, 0 = bad
+
+        # ---- Get CS mask ----
+        cloud_score = self._calculate_cloud_score(scaled_data)
+        cs_cloud_mask = cloud_score > 0.05
+
+        if "buffercs" in combo_type:
+            cs_cloud_mask = binary_dilation(cs_cloud_mask, iterations=buffer_size)
+
+        dark_pixel_mask = self._mask_dark_pixels(scaled_data)
+
+        cs_mask = np.logical_and(~cs_cloud_mask, dark_pixel_mask).astype('float32')
+
+        # Combine: only pixels that are good in both masks
+        final_mask = np.logical_and(udm_mask, cs_mask).astype('float32')
+
+        masked_data = scaled_data * final_mask
+
+        meta.update({'dtype': 'float32'})
+        output_file = os.path.join(
+            str(self.output_dir),
+            os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif')
+        )
+
+        with rasterio.open(output_file, 'w', **meta) as dst:
+            dst.write(masked_data.astype('float32'))
+
+        print(f"Combined mask ({combo_type}) image saved to: {output_file}")
+        return output_file
+
+
 
