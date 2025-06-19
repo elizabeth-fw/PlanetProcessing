@@ -10,13 +10,13 @@ from compositing import create_median_composite
 
 def main():
     # Define directories
-    base_dir = "/Users/brookeengland/Documents/Internship/Project/Planet/Planet Practice Files"
+    base_dir = "/Users/brookeengland/Documents/Internship/Project/Planet/Planet Files"
     output_base_dir = "/Users/brookeengland/Documents/Internship/Project/Planet Output"
     aoi = gpd.read_file('/Users/brookeengland/Documents/Internship/Project/Planet/aotea/aotea.shp').to_crs('EPSG:2193')
 
     # Create output subfolders
     os.makedirs(os.path.join(output_base_dir, "RapidEye"), exist_ok=True)
-    #os.makedirs(os.path.join(output_base_dir, "PlanetScope"), exist_ok=True)
+    #os.makedirs(os.path.join(output_base_dir, "PlanetScope"), exist_ok=True) # Planet Scope
 
     # Get folders
     folders = glob.glob(f"{base_dir}/*")
@@ -98,17 +98,24 @@ def main():
                 print(f"Files not aligned: {analytic_clipped}, {udm_clipped}. Skipping.")
                 continue
 
-            cleaned_paths = {
-                "udm": processor.udm_mask(udm_clipped, analytic_clipped),
-                "udm_buffer": processor.udm_buffer_mask(udm_clipped, analytic_clipped),
-                "cs": processor.cs_mask(analytic_clipped),
-                "cs_buffer": processor.cs_buffer_mask(analytic_clipped),
+            # Individual masks
+            udm = processor.udm_mask(udm_clipped, analytic_clipped)
+            udm_buffer = processor.udm_buffer_mask(udm_clipped, analytic_clipped)
+            cs = processor.cs_mask(analytic_clipped)
+            cs_buffer = processor.cs_buffer_mask(analytic_clipped)
 
-                # Combined Masks
+            # Store paths
+            cleaned_paths = {
+                "udm": udm,
+                "udmbuffer": udm_buffer,
+                "cs": cs,
+                "csbuffer": cs_buffer,
+
+                # Combinations
                 "udm_cs": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udm_cs"),
-                "bufferudm_cs": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="bufferudm_cs"),
-                "udm_buffercs": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udm_buffercs"),
-                "bufferudm_buffercs": processor.combined_mask(analytic_clipped, udm_clipped,combo_type="bufferudm_buffercs")
+                "udm_csbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udm_csbuffer"),
+                "udmbuffer_cs": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_cs"),
+                "udmbuffer_csbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_csbuffer")
             }
 
             for mask_type, path in cleaned_paths.items():
@@ -139,7 +146,7 @@ def create_composites(output_dir):
         filename = os.path.basename(tif)
 
         # Extract mask type from the filename
-        match = re.search(r'_analytic_clipped_((?:udm(?:_buffer)?)|(?:cs(?:_buffer)?)|(?:buffer)?udm_(?:buffer)?cs)_cleaned\.tif$', filename)
+        match = re.search(r'_analytic_clipped_([a-z_]+)_cleaned\.tif$', filename)
         if not match:
             continue
         mask_type = match.group(1)

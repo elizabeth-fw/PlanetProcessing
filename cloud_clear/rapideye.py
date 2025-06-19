@@ -33,7 +33,7 @@ class RapidEye(CloudClearBase):
     def _calculate_cloud_score(self, scaled_data):
         """
         Custom cloud scoring using reflectance values (0-1).
-        Assumes RapidEye bands are ordered as [B, G, R, NIR, RedEdge].
+        Assumes RapidEye bands are ordered as [B, G, R, RedEdge, NIR].
         """
         blue = scaled_data[0, :, :]
         green = scaled_data[1, :, :]
@@ -94,10 +94,10 @@ class RapidEye(CloudClearBase):
         # Read UDM and generate binary mask
         with rasterio.open(udm_file) as src_udm:
             udm = src_udm.read(1)
-            usable_mask = udm == 2
+            unusable_mask = udm == 2
 
         # Invert mask: 1 = usable, 0 = masked
-        mask = np.where(usable_mask, 0, 1).astype('float32')
+        mask = np.where(unusable_mask, 0, 1).astype('float32')
 
         # Apply the mask to scaled data
         masked_data = scaled_data * mask[np.newaxis, :, :]
@@ -238,43 +238,57 @@ class RapidEye(CloudClearBase):
     def combined_mask(self, analytic_file, udm_file, combo_type="udm_cs", buffer_size=3):
         """
         Applies a combination of UDM and CS masking strategies
-
-        combo_type:
-            "udm_cs" -> UDM + CS
-            "bufferudm_cs"  -> buffered UDM + CS
-            "udm_buffercs" -> UDM + buffered CS
-            "bufferudm_buffercs" -> buffered UDM + buffered CS
         """
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
-        # ---- Get UDM mask ----
+        # Load UDM
         with rasterio.open(udm_file) as src_udm:
             udm = src_udm.read(1)
-
         unusable_mask = udm == 2
+        masks = {}
 
-        if "bufferudm" in combo_type:
-            unusable_mask = binary_dilation(unusable_mask, iterations=buffer_size)
+        # Generate UDM masks
+        masks["udm"] = np.where(unusable_mask, 0, 1).astype('float32')
+        masks["udmbuffer"] = np.where(binary_dilation(unusable_mask, iterations=buffer_size), 0, 1).astype('float32')
 
-        udm_mask = np.where(unusable_mask, 0, 1).astype('float32') # 1 = good, 0 = bad
-
-        # ---- Get CS mask ----
+        # Compute cloud score
         cloud_score = self._calculate_cloud_score(scaled_data)
-        cs_cloud_mask = cloud_score > 0.05
+        cloud_mask = cloud_score > 0.05
+        cloud_mask_buffered = binary_dilation(cloud_mask, iterations=buffer_size)
 
-        if "buffercs" in combo_type:
-            cs_cloud_mask = binary_dilation(cs_cloud_mask, iterations=buffer_size)
-
+        # Dark pixel mask
         dark_pixel_mask = self._mask_dark_pixels(scaled_data)
 
-        cs_mask = np.logical_and(~cs_cloud_mask, dark_pixel_mask).astype('float32')
+        # Generate CS masks
+        cs_valid = np.logical_and(~cloud_mask, dark_pixel_mask)
+        cs_buffer_valid = np.logical_and(~cloud_mask_buffered, dark_pixel_mask)
+        masks["cs"] = cs_valid.astype('float32')
+        masks["csbuffer"] = cs_buffer_valid.astype('float32')
 
-        # Combine: only pixels that are good in both masks
-        final_mask = np.logical_and(udm_mask, cs_mask).astype('float32')
+        # Validate combo type
+        def parse_combo_type(combo_type):
+            valid_parts = {"udm", "udmbuffer", "cs", "csbuffer"}
+            parts = []
+            for token in combo_type.split("_"):
+                if token in valid_parts:
+                    parts.append(token)
+                else:
+                    raise ValueError(f"Invalid mask type: {token}. Must be one of {list(masks.keys())}")
+            return parts
 
-        masked_data = scaled_data * final_mask
+        parts = parse_combo_type(combo_type)
 
+        # Combine all masks
+        final_mask = np.ones_like(masks["udm"])
+        for part in parts:
+            final_mask = np.logical_and(final_mask, masks[part])
+
+        # Apply final mask
+        masked_data = scaled_data * final_mask.astype('float32')
+
+        # Save output
         meta.update({'dtype': 'float32'})
+
         output_file = os.path.join(
             str(self.output_dir),
             os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif')
@@ -285,6 +299,7 @@ class RapidEye(CloudClearBase):
 
         print(f"Combined mask ({combo_type}) image saved to: {output_file}")
         return output_file
+
 
 
 
