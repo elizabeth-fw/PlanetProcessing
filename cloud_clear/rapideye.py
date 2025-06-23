@@ -3,6 +3,7 @@ import rasterio
 import numpy as np
 from scipy.ndimage import binary_dilation
 import os
+import matplotlib.pyplot as plt
 
 class RapidEye(CloudClearBase):
     def __init__(self, tmp_dir, output_dir, aoi):
@@ -19,7 +20,7 @@ class RapidEye(CloudClearBase):
         Returns:
             Binary mask where 1=valid pixels, 0=dark pixels to be masked
         """
-        # use Red Edge band (B4, index 3)
+        # Use Red Edge band (B4, index 3)
         red_edge_band = scaled_data[3, :, :]
 
         # Identify pixels below threshold in red edge band
@@ -28,7 +29,7 @@ class RapidEye(CloudClearBase):
         # Buffer the mask slightly to avoid edge artifacts
         buffered_mask = binary_dilation(dark_mask, iterations=2)
         
-        return ~buffered_mask  # Invert so 1=valid, 0=dark
+        return ~buffered_mask # Invert so 1=valid, 0=dark
 
     def _calculate_cloud_score(self, scaled_data):
         """
@@ -72,8 +73,10 @@ class RapidEye(CloudClearBase):
             # Read data
             raw_data = src_analytic.read()
             meta = src_analytic.meta.copy()
+
             # Scale to reflectance
             scaled_data = raw_data.astype('float32') / 10000.0
+
             # Return scaled data and meta data
             return scaled_data, meta
 
@@ -95,9 +98,8 @@ class RapidEye(CloudClearBase):
         with rasterio.open(udm_file) as src_udm:
             udm = src_udm.read(1)
             unusable_mask = udm == 2
-
-        # Invert mask: 1 = usable, 0 = masked
-        mask = np.where(unusable_mask, 0, 1).astype('float32')
+            # Invert mask: 1 = usable, 0 = masked
+            mask = np.where(unusable_mask, 0, 1)
 
         # Apply the mask to scaled data
         masked_data = scaled_data * mask[np.newaxis, :, :]
@@ -131,14 +133,14 @@ class RapidEye(CloudClearBase):
         with rasterio.open(udm_file) as src_udm:
             udm = src_udm.read(1)
 
-        # Create unusable mask (UDM value of 2 means cloud/shadow/etc.)
-        unusable_mask = udm == 2
+            # Create unusable mask (UDM value of 2 means cloud/shadow/etc.)
+            unusable_mask = udm == 2
 
-        # Apply buffer
-        buffered_mask = binary_dilation(unusable_mask, iterations=buffer_size)
+            # Apply buffer
+            buffered_mask = binary_dilation(unusable_mask, iterations=buffer_size)
 
-        # Invert 1 = valid, 0 = masked out
-        mask = np.where(buffered_mask, 0, 1).astype('float32')
+            # Invert 1 = valid, 0 = masked out
+            mask = np.where(buffered_mask, 0, 1)
 
         # Apply mask to image
         masked_data = scaled_data * mask[np.newaxis, :, :]
@@ -235,7 +237,7 @@ class RapidEye(CloudClearBase):
         print(f"Custom cloud masked image with buffer saved to: {output_file}")
         return output_file
 
-    def combined_mask(self, analytic_file, udm_file, combo_type="udm_cs", buffer_size=3):
+    def combined_mask(self, analytic_file, udm_file, combo_type="udm_cs", buffer_size=25):
         """
         Applies a combination of UDM and CS masking strategies
         """
@@ -262,6 +264,7 @@ class RapidEye(CloudClearBase):
         # Generate CS masks
         cs_valid = np.logical_and(~cloud_mask, dark_pixel_mask)
         cs_buffer_valid = np.logical_and(~cloud_mask_buffered, dark_pixel_mask)
+
         masks["cs"] = cs_valid.astype('float32')
         masks["csbuffer"] = cs_buffer_valid.astype('float32')
 
@@ -283,8 +286,17 @@ class RapidEye(CloudClearBase):
         for part in parts:
             final_mask = np.logical_and(final_mask, masks[part])
 
+
         # Apply final mask
-        masked_data = scaled_data * final_mask.astype('float32')
+        masked_data = scaled_data * final_mask
+
+        # Plot masks for debugging
+        #plot_mask(masks["udm"], "UDM Mask")
+        #plot_mask(masks["udmbuffer"], "UDM Buffer Mask")
+        #plot_mask(masks["cs"], "Cloud Score Mask")
+        #plot_mask(masks["csbuffer"], "Cloud Score Buffer Mask")
+        #plot_mask(dark_pixel_mask, "Dark Pixel Mask")
+        #plot_mask(final_mask, f"Final Combined Mask: {combo_type}")
 
         # Save output
         meta.update({'dtype': 'float32'})
@@ -299,6 +311,8 @@ class RapidEye(CloudClearBase):
 
         print(f"Combined mask ({combo_type}) image saved to: {output_file}")
         return output_file
+
+
 
 
 

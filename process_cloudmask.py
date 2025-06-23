@@ -56,8 +56,8 @@ def main():
             continue
 
         # Get image files
-        file_list = glob.glob(f"{folder}/REOrthoTile/*.tif")
-        print(f"Found {len(file_list)} .tif files in {folder}/REOrthoTile")
+        file_list = glob.glob(f"{folder}/REOrthoTile/*Analytic_SR_clip_file_format.tif")
+        print(f"Found {len(file_list)} Analytic_SR .tif files in {folder}/REOrthoTile")
 
         # Create per-year output directory
         yearly_output_dir = os.path.join(output_base_dir, "RapidEye", year)
@@ -74,18 +74,12 @@ def main():
                 aoi=aoi
             )
 
-            # Get UDM file
-            if 'Analytic_SR' in file:
-                udm_file = file.replace('Analytic_SR', 'udm')
-            elif 'AnalyticMS_SR_8b_harmonized' in file:
-                udm_file = file.replace('AnalyticMS_SR_8b_harmonized', 'udm2')
-            else:
-                print(f"Unsupported file naming convention: {file}. Skipping.")
-                continue
+            # Build UDM file path
+            udm_file = file.replace('Analytic_SR', 'udm')
 
-            # UDM file not found
+            # Check if UDM file exists
             if not os.path.exists(udm_file):
-                print(f"UDM file not found: {udm_file}. Skipping.")
+                print(f"UDM file not found: {udm_file}. Skipping {file}")
                 continue
 
             # Process analytic file
@@ -94,15 +88,16 @@ def main():
             # Process UDM file
             udm_clipped = processor.reproject_and_clip(udm_file, 'udm')
 
+            # Check alignment
             if not processor.check_file_properties(analytic_clipped, udm_clipped):
                 print(f"Files not aligned: {analytic_clipped}, {udm_clipped}. Skipping.")
                 continue
 
             # Individual masks
             udm = processor.udm_mask(udm_clipped, analytic_clipped)
-            udm_buffer = processor.udm_buffer_mask(udm_clipped, analytic_clipped)
+            udm_buffer = processor.udm_buffer_mask(udm_clipped, analytic_clipped, 25)
             cs = processor.cs_mask(analytic_clipped)
-            cs_buffer = processor.cs_buffer_mask(analytic_clipped)
+            cs_buffer = processor.cs_buffer_mask(analytic_clipped, 25)
 
             # Store paths
             cleaned_paths = {
