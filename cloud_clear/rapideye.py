@@ -289,14 +289,6 @@ class RapidEye(CloudClearBase):
         # Apply final mask
         masked_data = scaled_data * final_mask
 
-        # Plot masks for debugging
-        #plot_mask(masks["udm"], "UDM Mask")
-        #plot_mask(masks["udmbuffer"], "UDM Buffer Mask")
-        #plot_mask(masks["cs"], "Cloud Score Mask")
-        #plot_mask(masks["csbuffer"], "Cloud Score Buffer Mask")
-        #plot_mask(dark_pixel_mask, "Dark Pixel Mask")
-        #plot_mask(final_mask, f"Final Combined Mask: {combo_type}")
-
         # Save output
         meta.update({'dtype': 'float32'})
 

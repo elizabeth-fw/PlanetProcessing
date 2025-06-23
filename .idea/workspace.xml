@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="Tuesday Updates">
-      <change beforePath="$PROJECT_DIR$/.idea/PlanetProcessing.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PlanetProcessing.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="Monday Updates">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cloud_clear/rapideye.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/rapideye.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compositing.py" beforeDir="false" afterPath="$PROJECT_DIR$/compositing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/process_cloudmask.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_cloudmask.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -26,6 +25,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "brookeengland"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/brookeengland/PlanetProcessing.git",
+    "accountId": "b6e326ef-cad7-4392-9f82-5adc37c2d0bd"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
@@ -70,7 +81,7 @@
       <workItem from="1731900399187" duration="5783000" />
       <workItem from="1732223726059" duration="1345000" />
       <workItem from="1739499156735" duration="37000" />
-      <workItem from="1750120699921" duration="55232000" />
+      <workItem from="1750120699921" duration="60098000" />
     </task>
     <task id="LOCAL-00001" summary="Tuesday Updates">
       <option name="closed" value="true" />
@@ -96,7 +107,23 @@
       <option name="project" value="LOCAL" />
       <updated>1750292955813</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Tuesday Updates">
+      <option name="closed" value="true" />
+      <created>1750643826555</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1750643826555</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Monday Updates">
+      <option name="closed" value="true" />
+      <created>1750643883311</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1750643883311</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -115,10 +142,11 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Tuesday Updates" />
-    <option name="LAST_COMMIT_MESSAGE" value="Tuesday Updates" />
+    <MESSAGE value="Monday Updates" />
+    <option name="LAST_COMMIT_MESSAGE" value="Monday Updates" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Mosaicking_py$rapideye.coverage" NAME="rapideye Coverage Results" MODIFIED="1750640658372" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
-    <SUITE FILE_PATH="coverage/Mosaicking_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1750643283585" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Mosaicking_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1750647423116" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

@@ -4,6 +4,9 @@ import geopandas as gpd
 import shutil
 import os
 import re
+
+from pyproj import aoi
+
 #from cloud_clear.planetscope import PlanetScope
 from cloud_clear.rapideye import RapidEye
 from compositing import create_median_composite
@@ -128,7 +131,7 @@ def main():
 
 
 # ----- Generate composites ------
-def create_composites(output_dir):
+def create_composites(output_dir, aoi):
     composites_dir = os.path.join(output_dir, "composites")
     os.makedirs(composites_dir, exist_ok=True)
 
@@ -161,7 +164,7 @@ def create_composites(output_dir):
         composite_path = os.path.join(composites_dir, f"REOrthoTile_median_{mask_type}_composite_{year}.tif")
         print(f"Creating composite for {mask_type} mask in {year} from {len(files)} images....")
 
-        if create_median_composite(files, composite_path):
+        if create_median_composite(files, composite_path, aoi=aoi):
             print(f"Composite created: {composite_path}")
             created_count += 1
 
@@ -169,6 +172,7 @@ def create_composites(output_dir):
 
 
 if __name__ == "__main__":
+    aoi = gpd.read_file('/Users/brookeengland/Documents/Internship/Project/Planet/aotea/aotea.shp').to_crs('EPSG:2193')
     main()
-    create_composites("/Users/brookeengland/Documents/Internship/Project/Planet Output")
+    create_composites("/Users/brookeengland/Documents/Internship/Project/Planet Output", aoi)
 

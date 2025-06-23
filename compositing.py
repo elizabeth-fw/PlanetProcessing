@@ -1,100 +1,97 @@
 import numpy as np
 import rasterio
 from rasterio.warp import reproject, Resampling
+from rasterio.mask import mask
+from rasterio.transform import from_origin
+from shapely.geometry import box
+import geopandas as gpd
 
-def create_median_composite(input_files, output_path):
+def create_median_composite(input_files, output_path, aoi, resolution=(5,5), nodata_val=-9999):
     """
-    Creates median composite with transparent background (proper nodata handling)
+    Creates a median composite of cloud-masked images aligned to a grid defined by the AOI.
+
+    Args:
+        input_files (list): List of cleaned image paths
+        output_path (str): Output GeoTIFF path
+        aoi (GeoDataFrame): AOI polygon in EPSG:2193
+        resolution (tuple): (xres, yres) in output (e.g. (5,5))
+        nodata_val (numeric): Nodata fill value
+
     """
     if len(input_files) < 2:
         print("Need at least 2 images to create composite")
         return False
 
     try:
-        # Get union bounds and resolution from all images
-        bounds = []
-        resolutions = []
-        crs_list = []
-        nodata_values = []
-        
-        for f in input_files:
-            with rasterio.open(f) as src:
-                bounds.append(src.bounds)
-                resolutions.append(src.res)
-                crs_list.append(src.crs)
-                nodata_values.append(src.nodata)
+        # --- Define output grid from AOI ---
+        minx, miny, maxx, maxy = aoi.total_bounds
+        xres, yres = resolution
+        width = int((maxx - minx) / xres)
+        height = int((maxy - miny) / yres)
+        transform = from_origin(minx, maxy, xres, yres)
+        dst_crs = 'EPSG:2193'
 
-        # Use most common nodata value or default to 0
-        nodata = max(set(nodata_values), key=nodata_values.count) if nodata_values else 0
-        
-        # Calculate output bounds and resolution
-        left = min(b[0] for b in bounds)
-        bottom = min(b[1] for b in bounds)
-        right = max(b[2] for b in bounds)
-        top = max(b[3] for b in bounds)
-        res = min(resolutions)  # Use finest resolution
+        # Get metadata from first image
+        with rasterio.open(input_files[0]) as ref:
+            bands = ref.count
+            dtype = 'float32'  # Safe default, you're already using reflectance-scaled float32
 
-        # Create output transform and dimensions
-        transform = rasterio.transform.from_origin(left, top, res[0], res[1])
-        width = int((right - left) / res[0])
-        height = int((top - bottom) / res[1])
-
-        # Initialize output with transparency (nodata)
-        with rasterio.open(input_files[0]) as src:
-            count = src.count
-            dtype = src.meta['dtype']
-        
-        output = np.full((count, height, width), nodata, dtype=dtype)
-        valid_pixels = np.zeros((height, width), dtype=np.uint8)
-
-        # Process each image
+        # Allocate aligned image stack
         all_data = []
+
         for file in input_files:
             with rasterio.open(file) as src:
-                data = np.full((count, height, width), nodata, dtype=dtype)
+                # Prepare empty aligned array
+                aligned = np.full((bands, height, width), np.nan, dtype=np.float32)
+
                 reproject(
-                    source=rasterio.band(src, range(1, count + 1)),
-                    destination=data,
+                    source=rasterio.band(src, list(range(1, bands + 1))),
+                    destination=aligned,
                     src_transform=src.transform,
                     src_crs=src.crs,
                     dst_transform=transform,
-                    dst_crs=src.crs,
+                    dst_crs=dst_crs,
                     resampling=Resampling.nearest
                 )
-                all_data.append(data)
-                valid_pixels += (data[0] != nodata).astype(np.uint8)
 
-        # Calculate composite
-        # 1. Areas with only one image
-        single_mask = (valid_pixels == 1)
-        for i, data in enumerate(all_data):
-            img_mask = (data[0] != nodata) & single_mask
-            output[:, img_mask] = data[:, img_mask]
+                # Convert source nodata to nan if not already
+                src_nodata = src.nodata if src.nodata is not None else nodata_val
+                aligned[aligned == src_nodata] = np.nan
 
-        # 2. Overlapping areas (median)
-        overlap_mask = (valid_pixels >= 2)
-        if overlap_mask.any():
-            stacked = np.stack([d[:, overlap_mask] for d in all_data], axis=0)
-            median_values = np.median(stacked, axis=0)
-            output[:, overlap_mask] = median_values
+                all_data.append(aligned)
 
-        # Write output with transparency
+            # Stack and compute median across input images
+        stack = np.stack(all_data, axis=0)  # (num_images, bands, height, width)
+        median = np.nanmedian(stack, axis=0)  # (bands, height, width)
+
+        # Convert nan back to nodata for saving
+        median[np.isnan(median)] = nodata_val
+
+        # Write final composite
         meta = {
             'driver': 'GTiff',
             'height': height,
             'width': width,
-            'count': count,
-            'dtype': dtype,
-            'crs': crs_list[0],
+            'count': bands,
+            'dtype': 'float32',
+            'crs': dst_crs,
             'transform': transform,
-            'nodata': nodata  # Critical for transparency
+            'nodata': nodata_val
         }
 
         with rasterio.open(output_path, 'w', **meta) as dst:
-            dst.write(output)
+            dst.write(median.astype('float32'))
 
+        print(f"Composite written to {output_path}")
         return True
 
     except Exception as e:
         print(f"Error creating composite: {e}")
+
         return False
+
+
+
+
+
+
