@@ -3,7 +3,6 @@ import rasterio
 import numpy as np
 from scipy.ndimage import binary_dilation
 import os
-import matplotlib.pyplot as plt
 
 class RapidEye(CloudClearBase):
     def __init__(self, tmp_dir, output_dir, aoi):

@@ -4,7 +4,7 @@ import geopandas as gpd
 import shutil
 import os
 import re
-from cloud_clear.planetscope import PlanetScope
+#from cloud_clear.planetscope import PlanetScope
 from cloud_clear.rapideye import RapidEye
 from compositing import create_median_composite
 
