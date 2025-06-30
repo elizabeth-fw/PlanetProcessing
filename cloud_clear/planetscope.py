@@ -5,6 +5,15 @@ from scipy.ndimage import binary_dilation
 import os
 
 class PlanetScope(CloudClearBase):
+    def __init__(self, tmp_dir, output_dir, aoi):
+        super().__init__(tmp_dir, output_dir, aoi)
+        # Dark pixel threshold - adjust this number between 0.0-1.0 if needed
+        # Higher values = more aggressive dark pixel masking
+        self.dark_threshold = 0.05  # Default threshold (5% reflectance)
+
+    def _mask_dark_pixels(self, scaled_data):
+        
+
     def _scale_to_reflectance(self, analytic_file):
         """
         Reads and scales image data from an analytic file to reflectance (0-1)

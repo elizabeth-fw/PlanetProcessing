@@ -1,10 +1,7 @@
 import numpy as np
 import rasterio
 from rasterio.warp import reproject, Resampling
-from rasterio.mask import mask
 from rasterio.transform import from_origin
-from shapely.geometry import box
-import geopandas as gpd
 
 def create_median_composite(input_files, output_path, aoi, resolution=(5,5), nodata_val=-9999):
     """
@@ -82,7 +79,7 @@ def create_median_composite(input_files, output_path, aoi, resolution=(5,5), nod
         with rasterio.open(output_path, 'w', **meta) as dst:
             dst.write(median.astype('float32'))
 
-        print(f"Composite written to {output_path}")
+        #print(f"Composite written to {output_path}")
         return True
 
     except Exception as e:
