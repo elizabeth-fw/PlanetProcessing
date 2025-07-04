@@ -2,7 +2,6 @@ import os
 import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from rasterio.mask import mask
-import numpy as np
 
 class CloudClearBase:
     def __init__(self, tmp_dir, output_dir, aoi):
