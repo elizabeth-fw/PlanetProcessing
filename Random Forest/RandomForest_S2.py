@@ -1,3 +1,33 @@
+"""
+Landslide Classification model using Random Forest
+---------------------------------------------------
+This script performs multi-year landslide classification using Sentinel-2 mosaics, DEM, and manually mapped slips
+Steps:
+1. DEM mosaicking, clipping, and resampling
+2. Adding control (non-landslide) pixels to slip rasters
+3. Extracting training samples from mosaics and slip rasters
+4. Training a Random Forest classifier
+5. Predicting landslide classes over entire mosaics
+
+Classes:
+    0 - Background
+    1 - High confidence landslide (merged from 0 and 1 in original slip raster)
+    2 - Medium confidence landslide
+    3 - Low confidence landslide
+    4 - Forest/Non-Landslide (from class 8 and 9 in original slip raster)
+
+Inputs:
+    - Sentinel-2 mosaic rasters
+    - Rasterized slip rasters (.tif with class labels)
+    - DEM GeoTIFFs (for elevation, slope, aspect)
+    - AOI shapefile for clipping DEM
+
+Outputs:
+    - Trained Random Forest model (.pkl)
+    - Predicted class rasters (.tif)
+"""
+
+# Imports
 import numpy as np
 import rasterio
 from sklearn.ensemble import RandomForestClassifier
@@ -23,6 +53,7 @@ n_estimators = 100
 test_size = 0.2
 
 # --------------------------- Step 1: Add Control Pixels ---------------------------
+# Adds stable background pixels (class 99) to the slip raster to improve classification balance
 def add_control_pixels(mosaic_path, slip_path, output_path, n_samples=5000):
     with rasterio.open(mosaic_path) as mosaic, rasterio.open(slip_path) as slips:
         mosaic_data = mosaic.read()
@@ -69,7 +100,13 @@ def add_control_pixels(mosaic_path, slip_path, output_path, n_samples=5000):
 
 
 # ------------------------- Step 2: Extract Training Samples -------------------------
-def extract_training_data_multi(mosaic_dir, slip_dir, years, n_samples=5000):
+# For each year:
+#   - Adds NDVI band from S2 mosaic
+#   - Adds DEM, slope, and aspect features
+#   - Filters out invalid pixels
+#   - Remaps slip classes
+#   - Collects labeled feature vectors for training
+def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
     X_all = []
     y_all = []
 
@@ -148,6 +185,9 @@ def extract_training_data_multi(mosaic_dir, slip_dir, years, n_samples=5000):
     return X_combined, y_combined
 
 # --------------------------------- Step 3: Train Model ----------------------------------
+# - Splits data into training and test sets
+# - Trains a Random Forest classifier with class balancing
+# - Evaluates performance using classification report
 def train_rf_classifier(X, y):
     # Train-Test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=test_size, random_state=42)
@@ -169,6 +209,10 @@ def train_rf_classifier(X, y):
     return clf
 
 # ----------------------------- Step 4: Predict Over Entire Raster -----------------------------
+# For each yearly mosaic:
+#   - Adds NDVI, DEM, slope, and aspect
+#   - Applies trained model across full raster
+#   - Saves prediction as GeoTIFF
 def batch_predict_all():
     mosaic_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/'
     output_dir = '/Users/brookeengland/Documents/Internship/Project/Random Forest/Predictions/Batch'
@@ -236,6 +280,7 @@ def batch_predict_all():
 
 
 # ------------------- DEM Processing -----------------------
+# mosaic_dems() - Combines multiple DEM tiles
 def mosaic_dems(input_folder, output_path):
     # Find all .tif files
     search_path = os.path.join(input_folder, "*.tif")
@@ -264,7 +309,7 @@ def mosaic_dems(input_folder, output_path):
     print(f"Mosaic saved to: {output_path}")
 
 
-# Clip to AOI shapefile
+# clip_raster() - clips DEM mosaic to AOI shapefile
 def clip_raster(raster_path, shapefile_path, output_path):
     with rasterio.open(raster_path) as src:
         aoi = gpd.read_file(shapefile_path).to_crs(src.crs)
@@ -280,7 +325,7 @@ def clip_raster(raster_path, shapefile_path, output_path):
             dest.write(out_image)
 
 
-# Resample to match mosaic resolution
+# resample_raster_to_match() - Matches DEM resolution to S2 mosaics
 def resample_raster_to_match(src_path, target_path, output_path):
     with rasterio.open(src_path) as src:
         src_data = src.read(1)
@@ -320,7 +365,7 @@ def resample_raster_to_match(src_path, target_path, output_path):
     print(f"Resampled DEM saved to: {output_path}")
 
 
-# Calculate the Slope and Aspect
+# calculate_slope_aspect() - derives slope and aspect from DEM
 def calculate_slope_aspect(dem_array, pixel_size):
     # Gradient in x (cols) and y (rows)
     dz_dy, dz_dx = np.gradient(dem_array, pixel_size)
@@ -338,6 +383,7 @@ def calculate_slope_aspect(dem_array, pixel_size):
 
 
 # ---------------------- Main Workflow ---------------------
+# Executes DEM prep, data extraction, model training, and predictions
 def main():
     years = [2018, 2019, 2020, 2021, 2022, 2023]    # years for training data
     mosaic_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/'
@@ -360,7 +406,7 @@ def main():
     )
 
     print("Extracting multi-year training data...")
-    X, y = extract_training_data_multi(mosaic_dir, slip_dir, years, n_samples=20000)
+    X, y = extract_training_data(mosaic_dir, slip_dir, years, n_samples=20000)
 
     print("Training Random Forest classifier...")
     model = train_rf_classifier(X, y)
