@@ -41,6 +41,17 @@ from rasterio.merge import merge
 import geopandas as gpd
 from rasterio.mask import mask
 from rasterio.warp import reproject, Resampling
+from datetime import datetime
+
+# ----------------- Txt Log -------------------
+def log_to_csv(log_path, row, headers=None):
+    file_exists = os.path.exists(log_path)
+    with open(log_path, mode='a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=row.keys())
+        if not file_exists and headers:
+            writer.writeheader()
+        writer.writerow(row)
+
 
 # ---------------- File Paths ------------------
 model_output_path = '/Users/brookeengland/Documents/Internship/Project/Random Forest/Output/S2_multiyear_rf_model.pkl'
@@ -188,7 +199,7 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
 # - Splits data into training and test sets
 # - Trains a Random Forest classifier with class balancing
 # - Evaluates performance using classification report
-def train_rf_classifier(X, y):
+def train_rf_classifier(X, y, txt_report_path=None, model_name=None, dataset_years=None):
     # Train-Test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=test_size, random_state=42)
 
@@ -204,8 +215,30 @@ def train_rf_classifier(X, y):
     # Make Predictions
     y_pred = clf.predict(X_test)
 
-    # Output Classification Report
-    print("Classification Report:\n", classification_report(y_test, y_pred))
+    # Classification report
+    report=classification_report(y_test, y_pred)
+    print("Classification Report:\n", report)
+
+    # Save text report
+    if txt_report_path:
+        with open(txt_report_path, 'a') as f:
+            f.write('\n' + "=" * 80 + "\n")
+            f.write(f"Model trained: {datetime.now().isoformat()}\n")
+            f.write(f"Model file: {model_name or 'N/A'}\n")
+            f.write(f"Dataset years: {dataset_years if dataset_years else 'N/A'}\n")
+            f.write(f"Input samples: {len(X)} | Features: {X.shape[1]}\n\n")
+            f.write(f"Features: NDVI + DEM + Slope + Aspect\n\n")
+            f.write("Class Label Definitions:\n")
+            f.write("    0 - Background \n")
+            f.write("    1 - High confidence landslide (merged from original 0 + 1)\n")
+            f.write("    2 - Medium confidence landslide\n")
+            f.write("    3 - Low confidence landslide\n")
+            f.write("    4 - Forest / Non-landslide (original 8 + 9)\n\n")
+            f.write("Classification Report:\n")
+            f.write(report)
+            f.write("\n\n")
+        print(f"Appended classification report to: {txt_report_path}")
+
     return clf
 
 # ----------------------------- Step 4: Predict Over Entire Raster -----------------------------
@@ -385,6 +418,9 @@ def calculate_slope_aspect(dem_array, pixel_size):
 # ---------------------- Main Workflow ---------------------
 # Executes DEM prep, data extraction, model training, and predictions
 def main():
+    txt_report_path = "/Users/brookeengland/Documents/Internship/Project/Random Forest/Output/classification_report.txt"
+    model_name = os.path.basename(model_output_path)
+
     years = [2018, 2019, 2020, 2021, 2022, 2023]    # years for training data
     mosaic_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/'
     slip_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Rasterized/'
@@ -409,7 +445,10 @@ def main():
     X, y = extract_training_data(mosaic_dir, slip_dir, years, n_samples=20000)
 
     print("Training Random Forest classifier...")
-    model = train_rf_classifier(X, y)
+    model = train_rf_classifier(X, y,
+                                txt_report_path=txt_report_path,
+                                model_name=model_name,
+                                dataset_years=years)
 
     print("Saving Trained Model...")
     os.makedirs(os.path.dirname(model_output_path), exist_ok=True)
