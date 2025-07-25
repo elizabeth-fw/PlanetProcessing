@@ -107,6 +107,8 @@ class RapidEye(CloudClearBase):
         meta.update({'dtype': 'float32'})
         output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
 
+        #Re-scale to an in16 suitable value
+
         # Save result
         with rasterio.open(output_file, 'w', **meta) as dst:
             dst.write(masked_data.astype('float32'))
@@ -197,27 +199,27 @@ class RapidEye(CloudClearBase):
 
     def low_cs_buffer(self, cloud_mask):
         """
-        Create a low cloud score buffer (5 pixels)
+        Create a low cloud score buffer (5 pixels) - testing 10
 
         Args:
             cloud_mask: Binary cloud mask (1=cloud, 0=clear)
         Returns:
             np.ndarray: Buffered mask
         """
-        low_buffer = binary_dilation(cloud_mask, iterations=5)
+        low_buffer = binary_dilation(cloud_mask, iterations=10)
         return low_buffer
 
 
     def high_cs_buffer(self, cloud_mask):
         """
-        Create a high cloud score buffer (25 pixels)
+        Create a high cloud score buffer (25 pixels) - testing 30
 
         Args:
             cloud_mask: Binary cloud mask (1=cloud, 0=clear)
         Returns:
             np.ndarray: Buffered mask
         """
-        high_buffer = binary_dilation(cloud_mask, iterations=25)
+        high_buffer = binary_dilation(cloud_mask, iterations=30)
         return high_buffer
 
 

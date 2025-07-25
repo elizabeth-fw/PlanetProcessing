@@ -67,6 +67,16 @@ class PlanetScope8Band(CloudClearBase):
         Applies the UDM mask to the analytic file and saves the cleaned image in the output directory.
         A buffer of 3 pixels is applied to the UDM mask to make it slightly larger.
         """
+        # Compute expected output path
+        output_file = os.path.join(
+            self.output_dir,
+            os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif')
+        )
+
+        # Skip if already exists
+        if self._skip_if_exists(output_file):
+            return output_file
+
         # Read and scale the analytic data
         analytic_data, out_meta = self._scale_to_reflectance(analytic_file)
 
@@ -106,6 +116,19 @@ class PlanetScope8Band(CloudClearBase):
         Applies the UDM mask to the analytic file and saves the cleaned image in the output directory.
         A buffer of 3 pixels is applied to the UDM mask to make it slightly larger.
         """
+        # Compute expected output path
+        output_file = os.path.join(
+            self.output_dir,
+            os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif')
+        )
+
+        # Skip if already exists
+        if self._skip_if_exists(output_file):
+            return output_file
+
+        # Read and scale the analytic data
+        analytic_data, out_meta = self._scale_to_reflectance(analytic_file)
+
         # Read and scale the analytic data
         analytic_data, out_meta = self._scale_to_reflectance(analytic_file)
 
@@ -146,6 +169,13 @@ class PlanetScope8Band(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        output_file = os.path.join(
+            str(self.output_dir),
+            os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif')
+        )
+        if self._skip_if_exists(output_file):
+            return output_file
+
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -208,6 +238,14 @@ class PlanetScope8Band(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        suffix = f"_cs_{buffer_type}_buffer_mask_cleaned.tif"
+        output_file = os.path.join(
+            str(self.output_dir),
+            os.path.basename(analytic_file).replace('.tif', suffix)
+        )
+        if self._skip_if_exists(output_file):
+            return output_file
+
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -256,6 +294,13 @@ class PlanetScope8Band(CloudClearBase):
         Returns:
             str: Path to saved masked image
         """
+        output_file = os.path.join(
+            str(self.output_dir),
+            os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif')
+        )
+        if self._skip_if_exists(output_file):
+            return output_file
+
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
         # Load UDM

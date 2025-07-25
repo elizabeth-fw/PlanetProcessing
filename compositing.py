@@ -1,4 +1,5 @@
 import numpy as np
+import bottleneck as bn
 import rasterio
 from rasterio.warp import reproject, Resampling
 from rasterio.transform import from_origin
@@ -58,8 +59,13 @@ def create_median_composite(input_files, output_path, aoi, resolution=(5,5), nod
                 all_data.append(aligned)
 
             # Stack and compute median across input images
+            print('Opened:', file)
+        print('Stacking...')
         stack = np.stack(all_data, axis=0)  # (num_images, bands, height, width)
-        median = np.nanmedian(stack, axis=0)  # (bands, height, width)
+        print(f"Stack dtype before masking: {stack.dtype}")
+        print('Finding the median...')
+        median = bn.nanmedian(stack, axis=0)  # (bands, height, width)
+        print(f"Median dtype after computation: {median.dtype}")
 
         # Convert nan back to nodata for saving
         median[np.isnan(median)] = nodata_val
@@ -75,11 +81,11 @@ def create_median_composite(input_files, output_path, aoi, resolution=(5,5), nod
             'transform': transform,
             'nodata': nodata_val
         }
-
+        print('Writing median output to disk...')
         with rasterio.open(output_path, 'w', **meta) as dst:
             dst.write(median.astype('float32'))
 
-        #print(f"Composite written to {output_path}")
+        print(f"Composite written to {output_path}")
         return True
 
     except Exception as e:

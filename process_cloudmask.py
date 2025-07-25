@@ -13,9 +13,9 @@ from compositing import create_median_composite
 
 def main():
     # Define directories
-    base_dir = "/Users/brookeengland/Documents/Internship/Project/Planet/Planet Files"
-    output_base_dir = "/Users/brookeengland/Documents/Internship/Project/Planet Output"
-    aoi = gpd.read_file('/Users/brookeengland/Documents/Internship/Project/Planet/aotea/aotea.shp').to_crs('EPSG:2193')
+    base_dir = "Z:/Raw_data/Aotea/Planet/"
+    output_base_dir = "Z:/Raw_data/Aotea/Planet/Output"
+    aoi = gpd.read_file('Z:/Raw_data/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
 
     # Create output subfolders
     os.makedirs(os.path.join(output_base_dir, "RapidEye"), exist_ok=True)
@@ -108,15 +108,15 @@ def main():
             # Store paths
             cleaned_paths = {
                 # Individual masks
-                "udm": processor.udm_mask(udm_clipped, analytic_clipped),
+                #"udm": processor.udm_mask(udm_clipped, analytic_clipped),
                 "udmbuffer": processor.udm_buffer_mask(udm_clipped, analytic_clipped, 25),
-                "cs": processor.cs_mask(analytic_clipped),
-                "lowcsbuffer": processor.apply_cs_buffer_mask(analytic_clipped, buffer_type="low"),
-                "highcsbuffer": processor.apply_cs_buffer_mask(analytic_clipped, buffer_type="high"),
+                #"cs": processor.cs_mask(analytic_clipped),
+                #"lowcsbuffer": processor.apply_cs_buffer_mask(analytic_clipped, buffer_type="low"),
+                #"highcsbuffer": processor.apply_cs_buffer_mask(analytic_clipped, buffer_type="high"),
 
                 # Combinations
-                "udm_lowcsbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udm_lowcsbuffer"),
-                "udmbuffer_cs": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_cs"),
+                "udmbuffer_lowcsbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_lowcsbuffer"),
+                #"udmbuffer_cs": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_cs"),
                 "udmbuffer_highcsbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_highcsbuffer")
             }
 
@@ -172,9 +172,13 @@ def create_composites(output_dir, aoi):
         year, mask_type = key.split('_', 1)
         files = composite_groups[key]
         source = next((sensor for sensor in ["RapidEye", "PlanetScope4Band", "PlanetScope8Band"] if sensor in files[0]), "UnknownSensor")
-        composite_path = os.path.join(composites_dir, f"{source}_median_{mask_type}_composite_{year}.tif")
-        print(f"Creating composite for {mask_type} mask in {year} from {len(files)} images....")
+        composite_path = os.path.join(composites_dir, f"{source}_median_{mask_type}_comp_{year}.tif")
 
+        if os.path.exists(composite_path):
+            print(f"Composite already exists: {composite_path}. Skipping.")
+            continue
+
+        print(f"Creating composite for {mask_type} mask in {year} from {len(files)} images....")
         if create_median_composite(files, composite_path, aoi=aoi):
             print(f"Composite created: {composite_path}")
             created_count += 1
@@ -222,7 +226,7 @@ def create_mosaic(output_dir):
     all_composites = glob.glob(os.path.join(composites_dir, "*.tif"))
     for comp in all_composites:
         filename = os.path.basename(comp)
-        match = re.search(r'_composite_(\d{4})\.tif', filename)
+        match = re.search(r'_comp_(\d{4})\.tif', filename)
         if match:
             year = match.group(1)
             composites_by_year[year].append(comp)
@@ -231,10 +235,10 @@ def create_mosaic(output_dir):
     for year, files in composites_by_year.items():
         # Prioritize specific composites
         priority_files = []
-        for name in ["udmbuffer_highcsbuffer", "udm_lowcsbuffer", "udmbuffer"]:
+        for name in ["udmbuffer_highcsbuffer", "udmbuffer_lowcsbuffer", "udmbuffer"]:
             matches = [
                 f for f in files
-                    if f"median_{name}_composite_" in os.path.basename(f)
+                    if f"median_{name}_comp_" in os.path.basename(f)
                 ]
             priority_files.extend(matches)
 
@@ -257,11 +261,15 @@ def create_mosaic(output_dir):
 
         mosaic_output_path = os.path.join(mosaic_output_dir, f"{prefix}_{year}.tif")
 
+        if os.path.exists(mosaic_output_path):
+            print(f"Mosaic already exists: {mosaic_output_path}. Skipping.")
+            continue
+
         mosaic_images(priority_files, mosaic_output_path)
 
 
 if __name__ == "__main__":
-    aoi = gpd.read_file('/Users/brookeengland/Documents/Internship/Project/Planet/aotea/aotea.shp').to_crs('EPSG:2193')
+    aoi = gpd.read_file('Z:/Raw_data/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
     main()
-    create_composites("/Users/brookeengland/Documents/Internship/Project/Planet Output", aoi)
-    create_mosaic("/Users/brookeengland/Documents/Internship/Project/Planet Output")
+    create_composites("Z:/Raw_data/Aotea/Planet/Output", aoi)
+    create_mosaic("Z:/Raw_data/Aotea/Planet/Output")
