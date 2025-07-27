@@ -65,6 +65,10 @@ class PlanetScope4Band(CloudClearBase):
         Applies the UDM mask to the analytic file and saves the cleaned image in the output directory.
         A buffer of 3 pixels is applied to the UDM mask to make it slightly larger.
         """
+        output_file = os.path.join(self.output_dir,
+                                   os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
         # Read and scale the analytic data
         analytic_data, out_meta = self._scale_to_reflectance(analytic_file)
 
@@ -90,7 +94,6 @@ class PlanetScope4Band(CloudClearBase):
         out_meta.update({'dtype': 'float32'})  # Update data type to float32 for scaled data
 
         # Save the masked and scaled image
-        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif'))
         with rasterio.open(output_file, 'w', **out_meta) as dst:
             dst.write(masked_data.astype('float32'))  # Ensure data is saved as float32
 
@@ -103,6 +106,10 @@ class PlanetScope4Band(CloudClearBase):
         Applies the UDM mask to the analytic file and saves the cleaned image in the output directory.
         A buffer of 3 pixels is applied to the UDM mask to make it slightly larger.
         """
+        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
+
         # Read and scale the analytic data
         analytic_data, out_meta = self._scale_to_reflectance(analytic_file)
 
@@ -125,8 +132,6 @@ class PlanetScope4Band(CloudClearBase):
         out_meta.update({'dtype': 'float32'})  # Update data type to float32 for scaled data
 
         # Save the masked and scaled image
-        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
-
         with rasterio.open(output_file, 'w', **out_meta) as dst:
             dst.write(masked_data.astype('float32'))  # Ensure data is saved as float32
 
@@ -141,6 +146,11 @@ class PlanetScope4Band(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        output_file = os.path.join(self.output_dir,
+                                   os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
+
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -158,7 +168,6 @@ class PlanetScope4Band(CloudClearBase):
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif'))
 
         # Save the result
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -203,6 +212,11 @@ class PlanetScope4Band(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif',
+                                                                                            f'_cs_{buffer_type}_buffer_mask_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
+
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -228,7 +242,6 @@ class PlanetScope4Band(CloudClearBase):
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', f'_cs_{buffer_type}_buffer_mask_cleaned.tif'))
 
         # Save the masked image
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -250,6 +263,11 @@ class PlanetScope4Band(CloudClearBase):
         Returns:
             str: Path to saved masked image
         """
+        output_file = os.path.join(self.output_dir,
+                                   os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
+
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
         # Load UDM
@@ -297,10 +315,6 @@ class PlanetScope4Band(CloudClearBase):
 
         # Save output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(
-            str(self.output_dir),
-            os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif')
-        )
 
         with rasterio.open(output_file, 'w', **meta) as dst:
             dst.write(masked_data.astype('float32'))

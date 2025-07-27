@@ -90,6 +90,10 @@ class RapidEye(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        output_file = os.path.join(str(self.output_dir),
+                                   os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -105,9 +109,6 @@ class RapidEye(CloudClearBase):
 
         # Prepare output path and metadata
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
-
-        #Re-scale to an in16 suitable value
 
         # Save result
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -127,6 +128,10 @@ class RapidEye(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        output_file = os.path.join(self.output_dir,
+                                   os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -148,7 +153,6 @@ class RapidEye(CloudClearBase):
 
         # update metadata
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif'))
 
         # Save output
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -167,6 +171,10 @@ class RapidEye(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        output_file = os.path.join(str(self.output_dir),
+                                   os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -187,7 +195,6 @@ class RapidEye(CloudClearBase):
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif'))
 
         # Save the result
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -232,6 +239,11 @@ class RapidEye(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
+        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif',
+                                                                                                 f'_cs_{buffer_type}_buffer_mask_cleaned.tif'))
+        if self._skip_if_exists(output_file):
+            return output_file
+
         # Read and scale analytic data
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
@@ -260,7 +272,6 @@ class RapidEye(CloudClearBase):
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', f'_cs_{buffer_type}_buffer_mask_cleaned.tif'))
 
         # Save the masked image
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -282,6 +293,13 @@ class RapidEye(CloudClearBase):
         Returns:
             str: Path to saved masked image
         """
+        output_file = os.path.join(
+            str(self.output_dir),
+            os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif'))
+
+        if self._skip_if_exists(output_file):
+            return output_file
+
         scaled_data, meta = self._scale_to_reflectance(analytic_file)
 
         # Load UDM
@@ -330,10 +348,6 @@ class RapidEye(CloudClearBase):
 
         # Save output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(
-            str(self.output_dir),
-            os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif')
-        )
 
         with rasterio.open(output_file, 'w', **meta) as dst:
             dst.write(masked_data.astype('float32'))

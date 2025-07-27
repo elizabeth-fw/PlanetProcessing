@@ -26,32 +26,34 @@ class CloudClearBase:
 
     def reproject_and_clip(self, file, output_suffix):
         """Reproject and clip a file to the AOI, saving in tmp directory."""
-        # Define expected output path
+        # Output paths
         clipped_path = os.path.join(
             self.tmp_dir,
             os.path.basename(file).replace('.tif', f'_{output_suffix}_clipped.tif')
         )
+        reprojected_path = os.path.join(
+            self.tmp_dir,
+            os.path.basename(file).replace('.tif', f'_{output_suffix}_reprojected.tif')
+        )
 
-        # Skip if clipped file already exists
-        if os.path.exists(clipped_path):
-            print(f"Clipped file already exists: {clipped_path}")
-            return clipped_path
+        # Check if clipped output already exists
+        if (skip := self._skip_if_exists(clipped_path)):
+            return skip
 
-        # Step 1: Reproject
-        with rasterio.open(file) as src:
-            transform, width, height = calculate_default_transform(
-                src.crs, 'EPSG:2193', src.width, src.height, *src.bounds
-            )
-            metadata = src.meta.copy()
-            metadata.update({'crs': 'EPSG:2193', 'transform': transform, 'width': width, 'height': height})
+        # Step 1: Reproject (if needed)
+        if not os.path.exists(reprojected_path):
+            with rasterio.open(file) as src:
+                transform, width, height = calculate_default_transform(
+                    src.crs, 'EPSG:2193', src.width, src.height, *src.bounds
+                )
+                metadata = src.meta.copy()
+                metadata.update({
+                    'crs': 'EPSG:2193',
+                    'transform': transform,
+                    'width': width,
+                    'height': height
+                })
 
-            reprojected_path = os.path.join(
-                self.tmp_dir,
-                os.path.basename(file).replace('.tif', f'_{output_suffix}_reprojected.tif')
-            )
-
-            # Skip reprojection if already done
-            if not os.path.exists(reprojected_path):
                 with rasterio.open(reprojected_path, 'w', **metadata) as dst:
                     for i in range(1, src.count + 1):
                         reproject(
@@ -63,8 +65,8 @@ class CloudClearBase:
                             dst_crs='EPSG:2193',
                             resampling=Resampling.nearest
                         )
-            else:
-                print(f"Reprojected file already exists: {reprojected_path}")
+        else:
+            print(f"Skipping reprojection, exists: {reprojected_path}")
 
         # Step 2: Clip
         with rasterio.open(reprojected_path) as src:
@@ -79,4 +81,5 @@ class CloudClearBase:
             with rasterio.open(clipped_path, 'w', **out_meta) as dst:
                 dst.write(out_image)
 
+        print(f"Reprojected and clipped file saved: {clipped_path}")
         return clipped_path

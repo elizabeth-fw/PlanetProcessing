@@ -68,10 +68,8 @@ class PlanetScope8Band(CloudClearBase):
         A buffer of 3 pixels is applied to the UDM mask to make it slightly larger.
         """
         # Compute expected output path
-        output_file = os.path.join(
-            self.output_dir,
-            os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif')
-        )
+        output_file = os.path.join(self.output_dir,
+            os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif'))
 
         # Skip if already exists
         if self._skip_if_exists(output_file):
@@ -103,7 +101,6 @@ class PlanetScope8Band(CloudClearBase):
         out_meta.update({'dtype': 'float32'})  # Update data type to float32 for scaled data
 
         # Save the masked and scaled image
-        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', '_udmbuffer_cleaned.tif'))
         with rasterio.open(output_file, 'w', **out_meta) as dst:
             dst.write(masked_data.astype('float32'))  # Ensure data is saved as float32
 
@@ -117,17 +114,12 @@ class PlanetScope8Band(CloudClearBase):
         A buffer of 3 pixels is applied to the UDM mask to make it slightly larger.
         """
         # Compute expected output path
-        output_file = os.path.join(
-            self.output_dir,
-            os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif')
-        )
+        output_file = os.path.join(self.output_dir,
+            os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
 
         # Skip if already exists
         if self._skip_if_exists(output_file):
             return output_file
-
-        # Read and scale the analytic data
-        analytic_data, out_meta = self._scale_to_reflectance(analytic_file)
 
         # Read and scale the analytic data
         analytic_data, out_meta = self._scale_to_reflectance(analytic_file)
@@ -152,8 +144,6 @@ class PlanetScope8Band(CloudClearBase):
         out_meta.update({'dtype': 'float32'})  # Update data type to float32 for scaled data
 
         # Save the masked and scaled image
-        output_file = os.path.join(self.output_dir, os.path.basename(analytic_file).replace('.tif', '_udm_cleaned.tif'))
-
         with rasterio.open(output_file, 'w', **out_meta) as dst:
             dst.write(masked_data.astype('float32'))  # Ensure data is saved as float32
 
@@ -169,8 +159,7 @@ class PlanetScope8Band(CloudClearBase):
         Returns:
             output_file (str): Path to the output file, masked image
         """
-        output_file = os.path.join(
-            str(self.output_dir),
+        output_file = os.path.join(self.output_dir,
             os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif')
         )
         if self._skip_if_exists(output_file):
@@ -193,7 +182,6 @@ class PlanetScope8Band(CloudClearBase):
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', '_cs_mask_cleaned.tif'))
 
         # Save the result
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -239,8 +227,7 @@ class PlanetScope8Band(CloudClearBase):
             output_file (str): Path to the output file, masked image
         """
         suffix = f"_cs_{buffer_type}_buffer_mask_cleaned.tif"
-        output_file = os.path.join(
-            str(self.output_dir),
+        output_file = os.path.join(self.output_dir,
             os.path.basename(analytic_file).replace('.tif', suffix)
         )
         if self._skip_if_exists(output_file):
@@ -271,7 +258,6 @@ class PlanetScope8Band(CloudClearBase):
 
         # Prepare output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(str(self.output_dir), os.path.basename(analytic_file).replace('.tif', f'_cs_{buffer_type}_buffer_mask_cleaned.tif'))
 
         # Save the masked image
         with rasterio.open(output_file, 'w', **meta) as dst:
@@ -284,18 +270,15 @@ class PlanetScope8Band(CloudClearBase):
     def combined_mask(self, analytic_file, udm_file, combo_type="udm_cs", buffer_size=25):
         """
         Applies a combination of UDM and CS masking strategies
-
         Args:
             analytic_file (str): Path to analytic image
             udm_file (str): Path to UDM file
             combo_type (str): Combination type (e.g., "udm_cs_lowbuffer")
             buffer_size (int): Buffer size for udmbuffer
-
         Returns:
             str: Path to saved masked image
         """
-        output_file = os.path.join(
-            str(self.output_dir),
+        output_file = os.path.join(self.output_dir,
             os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif')
         )
         if self._skip_if_exists(output_file):
@@ -307,7 +290,7 @@ class PlanetScope8Band(CloudClearBase):
         with rasterio.open(udm_file) as src_udm:
             udm_all = src_udm.read()
             unusable_mask = np.zeros_like(udm_all[0], dtype=bool)
-            for band_idx in range(1,7):
+            for band_idx in range(1, 7):
                 unusable_mask |= (udm_all[band_idx] == 1)
 
         masks = {}
@@ -348,10 +331,6 @@ class PlanetScope8Band(CloudClearBase):
 
         # Save output
         meta.update({'dtype': 'float32'})
-        output_file = os.path.join(
-            str(self.output_dir),
-            os.path.basename(analytic_file).replace('.tif', f'_{combo_type}_cleaned.tif')
-        )
 
         with rasterio.open(output_file, 'w', **meta) as dst:
             dst.write(masked_data.astype('float32'))
