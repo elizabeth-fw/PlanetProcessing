@@ -270,6 +270,6 @@ def create_mosaic(output_dir):
 
 if __name__ == "__main__":
     aoi = gpd.read_file('Z:/Raw_data/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
-    main()
+    #main()
     create_composites("Z:/Raw_data/Aotea/Planet/Output", aoi)
     create_mosaic("Z:/Raw_data/Aotea/Planet/Output")

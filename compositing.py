@@ -70,7 +70,7 @@ def create_median_composite(input_files, output_path, aoi, resolution=(5,5), nod
                                     destination=temp_array,
                                     src_transform=src.transform,
                                     src_crs=src.crs,
-                                    dst_transform=transform * window.transform(),
+                                    dst_transform=rasterio.windows.transform(window, transform),
                                     dst_crs=dst_crs,
                                     resampling=Resampling.nearest
                                 )
