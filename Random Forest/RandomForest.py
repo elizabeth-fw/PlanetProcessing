@@ -14,7 +14,9 @@ Classes:
     1 - High confidence landslide (merged from 0 and 1 in original slip raster)
     2 - Medium confidence landslide
     3 - Low confidence landslide
-    4 - Forest/Non-Landslide (from class 8 and 9 in original slip raster)
+    4 - Not a Landslide (bare, forest, urban)
+    5 - Cloud
+    6 - Shadow
 
 Inputs:
     - Sentinel-2 mosaic rasters
@@ -42,6 +44,9 @@ import geopandas as gpd
 from rasterio.mask import mask
 from rasterio.warp import reproject, Resampling
 from datetime import datetime
+from sklearn.metrics import accuracy_score
+import json
+from rasterio.features import rasterize
 
 # ----------------- Txt Log -------------------
 def log_to_csv(log_path, row, headers=None):
@@ -63,7 +68,53 @@ nodata_value = -9999
 n_estimators = 100
 test_size = 0.2
 
-# --------------------------- Step 1: Add Control Pixels ---------------------------
+# --------------------------- Step 1: Rasterize Slips from GeoPackage ----------------------
+def rasterize_slips_from_geopackage(gpkg_path, layer_name, reference_raster_path, output_raster_path, class_field='id'):
+    """
+    Rasterize slip polygons from a specific layer in a GeoPackage.
+    - gpkg_path: path to the geopackage
+    - layer_name: name of the year-specific layer
+    - reference_raster_path: the Sentinel-2 mosaic to match resolution and extent
+    - output_raster_path: where to save the rasterized slip layer
+    - class_field: attribute to rasterize
+    """
+    # Read polygons
+    gdf = gpd.read_file(gpkg_path, layer=layer_name)
+
+    # Read reference raster metadata
+    with rasterio.open(reference_raster_path) as ref:
+        out_meta = ref.meta.copy()
+        out_shape = (ref.height, ref.width)
+        out_transform = ref.transform
+        out_crs = ref.crs
+
+    # Create (geometry, value) tuples
+    shapes = [(geom, value) for geom, value in zip(gdf.geometry, gdf[class_field])]
+
+    # Rasterize
+    rasterized = rasterize(
+        shapes,
+        out_shape=out_shape,
+        transform=out_transform,
+        fill=nodata_value,
+        dtype='int16'
+    )
+
+    # Update metadata
+    out_meta.update({
+        'dtype': 'int16',
+        'count': 1,
+        'nodata': nodata_value
+    })
+
+    # Write to output directory
+    os.makedirs(os.path.dirname(output_raster_path), exist_ok=True)
+    with rasterio.open(output_raster_path, 'w', **out_meta) as dst:
+        dst.write(rasterized, 1)
+
+    print(f"Rasterized slip layer saved to: {output_raster_path}")
+
+# --------------------------- Step 2: Add Control Pixels ---------------------------
 # Adds stable background pixels (class 99) to the slip raster to improve classification balance
 def add_control_pixels(mosaic_path, slip_path, output_path, n_samples=5000):
     with rasterio.open(mosaic_path) as mosaic, rasterio.open(slip_path) as slips:
@@ -110,7 +161,7 @@ def add_control_pixels(mosaic_path, slip_path, output_path, n_samples=5000):
     print(f"Saved slip raster with {n_samples} control pixels to: {output_path}")
 
 
-# ------------------------- Step 2: Extract Training Samples -------------------------
+# ------------------------- Step 3: Extract Training Samples -------------------------
 # For each year:
 #   - Adds NDVI band from S2 mosaic
 #   - Adds DEM, slope, and aspect features
@@ -131,6 +182,18 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
         mosaic_path = os.path.join(mosaic_dir, f'S2_mosaic_{year}.tif')
         slip_path = os.path.join(slip_dir, f'S2_{year}_rasterized_slips.tif')
         filtered_path = os.path.join(slip_dir, f'S2_{year}_filtered_slips.tif')
+        gpkg_path = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/S2_slips.gpkg'
+        layer_name = f'S2_{year}_slips'  # Layer name must match this format
+
+        # Rasterize slips if raster doesn't already exist
+        if not os.path.exists(slip_path):
+            rasterize_slips_from_geopackage(
+                gpkg_path=gpkg_path,
+                layer_name=layer_name,
+                reference_raster_path=mosaic_path,
+                output_raster_path=slip_path,
+                class_field='id'
+            )
 
         # Add control pixels
         add_control_pixels(mosaic_path, slip_path, filtered_path, n_samples=n_samples)
@@ -171,13 +234,19 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
             y = slip_data[mask]
 
             # Apply Class Remapping
-            y_remapped = np.copy(y)
-            y_remapped[np.isin(y, [0, 1])] = 1  # Merge 0 + 1 -> high confidence landslide
+            y_remapped = np.full_like(y, fill_value=-1)
+            y_remapped[np.isin(y, [0, 1])] = 1  # Merge 0 + 1 -> High confidence landslide
             y_remapped[y == 2] = 2  # Medium confidence
             y_remapped[y == 3] = 3  # Low confidence
-            y_remapped[y == 8] = 4  # Forest
-            y_remapped[y == 9] = 4  # Non-Landslide
+            y_remapped[np.isin(y, [4, 8, 9])] = 4  # Not a landslide (bare, forest, urban)
+            y_remapped[y == 5] = 5  # Cloud error
+            y_remapped[y == 6] = 6  # Shadow
             y_remapped[y == 99] = 0 # Background
+
+            # Remove invalid
+            valid_mask = y_remapped != -1
+            X = X[valid_mask]
+            y_remapped = y_remapped[valid_mask]
 
             print(f"Extracted {X.shape[0]} training samples")
             X_all.append(X)
@@ -195,7 +264,7 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
     print(f"\nTotal training samples from {len(years)} years: {X_combined.shape[0]}")
     return X_combined, y_combined
 
-# --------------------------------- Step 3: Train Model ----------------------------------
+# --------------------------------- Step 4: Train Model ----------------------------------
 # - Splits data into training and test sets
 # - Trains a Random Forest classifier with class balancing
 # - Evaluates performance using classification report
@@ -219,6 +288,10 @@ def train_rf_classifier(X, y, txt_report_path=None, model_name=None, dataset_yea
     report=classification_report(y_test, y_pred)
     print("Classification Report:\n", report)
 
+    # Accuracy score
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Overall Accuracy: {accuracy:.4f}")
+
     # Save text report
     if txt_report_path:
         with open(txt_report_path, 'a') as f:
@@ -230,18 +303,34 @@ def train_rf_classifier(X, y, txt_report_path=None, model_name=None, dataset_yea
             f.write(f"Features: NDVI + DEM + Slope + Aspect\n\n")
             f.write("Class Label Definitions:\n")
             f.write("    0 - Background \n")
-            f.write("    1 - High confidence landslide (merged from original 0 + 1)\n")
+            f.write("    1 - High confidence landslide (merged from original ID 0 + 1)\n")
             f.write("    2 - Medium confidence landslide\n")
             f.write("    3 - Low confidence landslide\n")
-            f.write("    4 - Forest / Non-landslide (original 8 + 9)\n\n")
+            f.write("    4 - Not a landslide (bare, forest, urban: ID 4, 8, 9)\n")
+            f.write("    5 - Error (cloud): ID 5)\n")
+            f.write("    6 - Error (shadow): ID 6)\n\n")
+            f.write(f"Overall Accuracy: {accuracy:.4f}\n\n")
             f.write("Classification Report:\n")
             f.write(report)
             f.write("\n\n")
         print(f"Appended classification report to: {txt_report_path}")
 
-    return clf
+    return clf, accuracy
 
-# ----------------------------- Step 4: Predict Over Entire Raster -----------------------------
+
+# ------------------------- Save NDVI for later use ------------------
+def save_ndvi_raster(ndvi_array, meta, output_path):
+    ndvi_meta = meta.copy()
+    ndvi_meta.update({
+        "count": 1,
+        "dtype": "float32"
+    })
+    with rasterio.open(output_path, 'w', **ndvi_meta) as dst:
+        dst.write(ndvi_array.astype('float32'), 1)
+    print(f"Saved NDVI raster to: {output_path}")
+
+
+# ----------------------------- Step 5: Predict Over Entire Raster -----------------------------
 # For each yearly mosaic:
 #   - Adds NDVI, DEM, slope, and aspect
 #   - Applies trained model across full raster
@@ -278,6 +367,11 @@ def batch_predict_all():
             red = data[3, :, :]
             nir = data[7, :, :]
             ndvi = (nir - red) / (nir + red + 1e-6)
+
+            # Compute and save NDVI
+            ndvi_output_path = os.path.join(output_dir, f"{base_name}_ndvi.tif")
+            save_ndvi_raster(ndvi, meta, ndvi_output_path)
+
             ndvi = np.expand_dims(ndvi, axis=0)
             data = np.concatenate((data, ndvi), axis=0)
 
@@ -421,7 +515,7 @@ def main():
     txt_report_path = "/Users/brookeengland/Documents/Internship/Project/Random Forest/Output/classification_report.txt"
     model_name = os.path.basename(model_output_path)
 
-    years = [2018, 2019, 2020, 2021, 2022, 2023]    # years for training data
+    years = [2018, 2019, 2020, 2021, 2022, 2023] # years for training data
     mosaic_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/'
     slip_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Rasterized/'
 
@@ -445,7 +539,7 @@ def main():
     X, y = extract_training_data(mosaic_dir, slip_dir, years, n_samples=20000)
 
     print("Training Random Forest classifier...")
-    model = train_rf_classifier(X, y,
+    model, accuracy = train_rf_classifier(X, y,
                                 txt_report_path=txt_report_path,
                                 model_name=model_name,
                                 dataset_years=years)
@@ -454,6 +548,13 @@ def main():
     os.makedirs(os.path.dirname(model_output_path), exist_ok=True)
     joblib.dump(model, model_output_path)
     print(f"Saved model to {model_output_path}")
+
+    # Save accuracy to JSON file
+    accuracy_json_path = "/Users/brookeengland/Documents/Internship/Project/Random Forest/Output/model_accuracy.json"
+    with open(accuracy_json_path, "w") as f:
+        json.dump({"accuracy": accuracy}, f)
+    print(f"Saved model accuracy to {accuracy_json_path}")
+
 
 
 if __name__ == "__main__":
