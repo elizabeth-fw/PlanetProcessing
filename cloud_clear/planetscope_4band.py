@@ -45,6 +45,7 @@ class PlanetScope4Band(CloudClearBase):
 
         score = np.ones_like(blue)  # Start with score=1 (clear)
 
+        #Normalises by (band, min, max) - min / (max-min)
         # Brightness in blue band
         blue_score = (np.clip(blue, 0.05, 0.3) - 0.05) / 0.25
         score = np.minimum(score, blue_score)
@@ -53,7 +54,7 @@ class PlanetScope4Band(CloudClearBase):
         visible_score = (np.clip(red + green + blue, 0.1, 0.8) - 0.1) / 0.7
         score = np.minimum(score, visible_score)
 
-        # Brightness in NIR/RedEdge
+        # Brightness in NIR
         nir_score = (np.clip(nir, 0.15, 0.8) - 0.15) / 0.65    # Might need updating
         score = np.minimum(score, nir_score)
 

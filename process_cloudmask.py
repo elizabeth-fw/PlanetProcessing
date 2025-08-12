@@ -13,9 +13,9 @@ from compositing import create_median_composite
 
 def main():
     # Define directories
-    base_dir = "Z:/Raw_data/Aotea/Planet/"
-    output_base_dir = "Z:/Raw_data/Aotea/Planet/Output"
-    aoi = gpd.read_file('Z:/Raw_data/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
+    base_dir = "X:/Aotea/Planet/"
+    output_base_dir = "X:/Aotea/Planet/Output"
+    aoi = gpd.read_file('X:/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
 
     # Create output subfolders
     os.makedirs(os.path.join(output_base_dir, "RapidEye"), exist_ok=True)
@@ -49,15 +49,15 @@ def main():
             image_pattern = f"{folder}/REOrthoTile/*Analytic_SR_clip_file_format.tif"
 
         # ------ Planet Scope ------
-        elif 'psscene_analytic_8b_sr_udm2' in folder.lower(): # 8 band
-            processor_class = PlanetScope8Band
-            subfolder = "PlanetScope8Band"
-            image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_8b_harmonized_clip_file_format.tif"
-
-        elif 'psscene_analytic_sr_udm2' in folder.lower(): # 4 Band
-            processor_class = PlanetScope4Band
-            subfolder = "PlanetScope4Band"
-            image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_harmonized_clip_file_format.tif"
+        # elif 'psscene_analytic_8b_sr_udm2' in folder.lower(): # 8 band
+        #     processor_class = PlanetScope8Band
+        #     subfolder = "PlanetScope8Band"
+        #     image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_8b_harmonized_clip_file_format.tif"
+        #
+        # elif 'psscene_analytic_sr_udm2' in folder.lower(): # 4 Band
+        #     processor_class = PlanetScope4Band
+        #     subfolder = "PlanetScope4Band"
+        #     image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_harmonized_clip_file_format.tif"
 
         else:
             print(f"Unsupported folder: {folder}. Skipping.")
@@ -115,7 +115,8 @@ def main():
                 #"highcsbuffer": processor.apply_cs_buffer_mask(analytic_clipped, buffer_type="high"),
 
                 # Combinations
-                "udmbuffer_lowcsbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_lowcsbuffer"),
+                "udm_lowcsbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udm_lowcsbuffer"),
+                #"udmbuffer_lowcsbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_lowcsbuffer"),
                 #"udmbuffer_cs": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_cs"),
                 "udmbuffer_highcsbuffer": processor.combined_mask(analytic_clipped, udm_clipped, combo_type="udmbuffer_highcsbuffer")
             }
@@ -235,7 +236,7 @@ def create_mosaic(output_dir):
     for year, files in composites_by_year.items():
         # Prioritize specific composites
         priority_files = []
-        for name in ["udmbuffer_highcsbuffer", "udmbuffer_lowcsbuffer", "udmbuffer"]:
+        for name in ["udmbuffer_highcsbuffer", "udm_lowcsbuffer", "udmbuffer"]:
             matches = [
                 f for f in files
                     if f"median_{name}_comp_" in os.path.basename(f)
@@ -269,7 +270,7 @@ def create_mosaic(output_dir):
 
 
 if __name__ == "__main__":
-    aoi = gpd.read_file('Z:/Raw_data/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
-    #main()
-    create_composites("Z:/Raw_data/Aotea/Planet/Output", aoi)
-    create_mosaic("Z:/Raw_data/Aotea/Planet/Output")
+    aoi = gpd.read_file('X:/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
+    main()
+    create_composites("X:/Aotea/Planet/Output", aoi)
+    create_mosaic("X:/Aotea/Planet/Output")

@@ -30,6 +30,10 @@ class RapidEye(CloudClearBase):
         
         return ~buffered_mask # Invert so 1=valid, 0=dark
 
+    def calc_ndvi(self, nir, red):
+        ndvi = (nir - red) / (nir + red + 1e-6)  # avoid divide-by-zero
+        return ndvi
+
     def _calculate_cloud_score(self, scaled_data):
         """
         Custom cloud scoring using reflectance values (0-1).
@@ -42,7 +46,8 @@ class RapidEye(CloudClearBase):
         nir = scaled_data[4, :, :]
 
         score = np.ones_like(blue)  # Start with score=1 (clear)
-        
+
+        # Normalises by (band, min, max) - min / (max-min)
         # Brightness in blue band
         blue_score = (np.clip(blue, 0.05, 0.3) - 0.05) / 0.25
         score = np.minimum(score, blue_score)
@@ -51,10 +56,14 @@ class RapidEye(CloudClearBase):
         visible_score = (np.clip(red + green + blue, 0.1, 0.8) - 0.1) / 0.7
         score = np.minimum(score, visible_score)
         
-        # Brightness in NIR/RedEdge
-        nir_score = (np.clip(nir + rededge, 0.15, 0.8) - 0.15) / 0.65
+        # Brightness in NIR # used to include RedEdge (+ rededge)
+        nir_score = (np.clip(nir, 0.15, 0.8) - 0.15) / 0.65
         score = np.minimum(score, nir_score)
-        
+
+        ndvi = self.calc_ndvi(nir, red)
+        ndvi_mask = ndvi < 0.1
+        score = np.minimum(score, ndvi_mask)
+
         return score
 
     def _scale_to_reflectance(self, analytic_file):
@@ -213,7 +222,7 @@ class RapidEye(CloudClearBase):
         Returns:
             np.ndarray: Buffered mask
         """
-        low_buffer = binary_dilation(cloud_mask, iterations=10)
+        low_buffer = binary_dilation(cloud_mask, iterations=5)
         return low_buffer
 
 
@@ -226,7 +235,7 @@ class RapidEye(CloudClearBase):
         Returns:
             np.ndarray: Buffered mask
         """
-        high_buffer = binary_dilation(cloud_mask, iterations=30)
+        high_buffer = binary_dilation(cloud_mask, iterations=25)
         return high_buffer
 
 
