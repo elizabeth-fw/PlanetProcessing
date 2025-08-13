@@ -57,7 +57,7 @@ class RapidEye(CloudClearBase):
         score = np.minimum(score, visible_score)
         
         # Brightness in NIR # used to include RedEdge (+ rededge)
-        nir_score = (np.clip(nir, 0.15, 0.8) - 0.15) / 0.65
+        nir_score = (np.clip(nir + rededge, 0.3, 0.8) - 0.3) / 0.5
         score = np.minimum(score, nir_score)
 
         ndvi = self.calc_ndvi(nir, red)
@@ -323,7 +323,7 @@ class RapidEye(CloudClearBase):
 
         # Compute cloud score
         cloud_score = self._calculate_cloud_score(scaled_data)
-        cloud_mask = cloud_score > 0.05
+        cloud_mask = cloud_score > 0.2
         #cloud_mask_buffered = binary_dilation(cloud_mask, iterations=buffer_size)
 
         # Dark pixel mask
