@@ -1,32 +1,3 @@
-"""
-Landslide Classification model using Random Forest
----------------------------------------------------
-This script performs multi-year landslide classification using Sentinel-2 mosaics, DEM, and manually mapped slips
-Steps:
-1. DEM mosaicking, clipping, and resampling
-2. Adding control (non-landslide) pixels to slip rasters
-3. Extracting training samples from mosaics and slip rasters
-4. Training a Random Forest classifier
-5. Predicting landslide classes over entire mosaics
-
-Classes:
-    0 - Background
-    1 - High confidence landslide (merged from 0 and 1 in original slip raster)
-    2 - Medium confidence landslide
-    3 - Low confidence landslide
-    4 - Forest/Non-Landslide (from class 8 and 9 in original slip raster)
-
-Inputs:
-    - Sentinel-2 mosaic rasters
-    - Rasterized slip rasters (.tif with class labels)
-    - DEM GeoTIFFs (for elevation, slope, aspect)
-    - AOI shapefile for clipping DEM
-
-Outputs:
-    - Trained Random Forest model (.pkl)
-    - Predicted class rasters (.tif)
-"""
-
 # Imports
 import numpy as np
 import rasterio
@@ -41,6 +12,17 @@ from rasterio.merge import merge
 import geopandas as gpd
 from rasterio.mask import mask
 from rasterio.warp import reproject, Resampling
+from datetime import datetime
+
+# ----------------- Txt Log -------------------
+def log_to_csv(log_path, row, headers=None):
+    file_exists = os.path.exists(log_path)
+    with open(log_path, mode='a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=row.keys())
+        if not file_exists and headers:
+            writer.writeheader()
+        writer.writerow(row)
+
 
 # ---------------- File Paths ------------------
 model_output_path = '/Users/brookeengland/Documents/Internship/Project/Random Forest/Output/S2_multiyear_rf_model.pkl'
@@ -101,8 +83,7 @@ def add_control_pixels(mosaic_path, slip_path, output_path, n_samples=5000):
 
 # ------------------------- Step 2: Extract Training Samples -------------------------
 # For each year:
-#   - Adds NDVI band from S2 mosaic
-#   - Adds DEM, slope, and aspect features
+#   - Adds DEM and aspect features
 #   - Filters out invalid pixels
 #   - Remaps slip classes
 #   - Collects labeled feature vectors for training
@@ -129,34 +110,27 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
             mosaic_data = mosaic.read()
             slip_data = slips.read(1)
 
-            # Add NDVI band (will need to change bands depending on satellite)
-            red = mosaic_data[3, :, :]
-            nir = mosaic_data[7, :, :]
-            ndvi = (nir - red) / (nir + red + 1e-6)
-            ndvi = np.expand_dims(ndvi, axis=0)
-            mosaic_data_with_ndvi = np.concatenate((mosaic_data, ndvi), axis=0)
-
-            invalid_values = [nodata_value, 255]
-            mask = ~np.isin(slip_data, invalid_values)
-
             # Check shape match
             if dem_data.shape != mosaic_data.shape[1:]:
                 raise ValueError(f"DEM shape {dem_data.shape} doesn't match mosaic {mosaic_data.shape[1:]}")
 
             # Add DEM as extra band
             dem_band = np.expand_dims(dem_data, axis=0)
-            mosaic_data_with_ndvi = np.concatenate((mosaic_data_with_ndvi, dem_band), axis=0)
+            combined_data = np.concatenate((mosaic_data, dem_band), axis=0)
 
-            # Compute slope and aspect
+            # Compute aspect
             pixel_size = 10
-            slope, aspect = calculate_slope_aspect(dem_data, pixel_size)
+            _, aspect = calculate_slope_aspect(dem_data, pixel_size)
 
-            # Stack slope and aspect as additional bands
-            slope_band = np.expand_dims(slope, axis=0)
+            # Stack aspect as additional band
             aspect_band = np.expand_dims(aspect, axis=0)
-            mosaic_data_with_ndvi = np.concatenate((mosaic_data_with_ndvi, slope_band, aspect_band), axis=0)
+            combined_data = np.concatenate((combined_data, aspect_band), axis=0)
 
-            X = mosaic_data_with_ndvi[:, mask].T
+            # Create mask of valid pixels
+            invalid_values = [nodata_value, 255]
+            mask = ~np.isin(slip_data, invalid_values)
+
+            X = combined_data[:, mask].T
             y = slip_data[mask]
 
             # Apply Class Remapping
@@ -188,7 +162,7 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
 # - Splits data into training and test sets
 # - Trains a Random Forest classifier with class balancing
 # - Evaluates performance using classification report
-def train_rf_classifier(X, y):
+def train_rf_classifier(X, y, txt_report_path=None, model_name=None, dataset_years=None):
     # Train-Test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=test_size, random_state=42)
 
@@ -204,13 +178,35 @@ def train_rf_classifier(X, y):
     # Make Predictions
     y_pred = clf.predict(X_test)
 
-    # Output Classification Report
-    print("Classification Report:\n", classification_report(y_test, y_pred))
+    # Classification report
+    report=classification_report(y_test, y_pred)
+    print("Classification Report:\n", report)
+
+    # Save text report
+    if txt_report_path:
+        with open(txt_report_path, 'a') as f:
+            f.write('\n' + "=" * 80 + "\n")
+            f.write(f"Model trained: {datetime.now().isoformat()}\n")
+            f.write(f"Model file: {model_name or 'N/A'}\n")
+            f.write(f"Dataset years: {dataset_years if dataset_years else 'N/A'}\n")
+            f.write(f"Input samples: {len(X)} | Features: {X.shape[1]}\n\n")
+            f.write(f"Features: DEM + Aspect\n\n")
+            f.write("Class Label Definitions:\n")
+            f.write("    0 - Background \n")
+            f.write("    1 - High confidence landslide (merged from original 0 + 1)\n")
+            f.write("    2 - Medium confidence landslide\n")
+            f.write("    3 - Low confidence landslide\n")
+            f.write("    4 - Forest / Non-landslide (original 8 + 9)\n\n")
+            f.write("Classification Report:\n")
+            f.write(report)
+            f.write("\n\n")
+        print(f"Appended classification report to: {txt_report_path}")
+
     return clf
 
 # ----------------------------- Step 4: Predict Over Entire Raster -----------------------------
 # For each yearly mosaic:
-#   - Adds NDVI, DEM, slope, and aspect
+#   - Adds DEM and aspect
 #   - Applies trained model across full raster
 #   - Saves prediction as GeoTIFF
 def batch_predict_all():
@@ -241,13 +237,6 @@ def batch_predict_all():
             meta = src.meta.copy()
             height, width = data.shape[1], data.shape[2]
 
-            # Add NDVI (will need to change bands depending on satellite)
-            red = data[3, :, :]
-            nir = data[7, :, :]
-            ndvi = (nir - red) / (nir + red + 1e-6)
-            ndvi = np.expand_dims(ndvi, axis=0)
-            data = np.concatenate((data, ndvi), axis=0)
-
         # Add DEM
         dem_path = "/Users/brookeengland/Documents/Internship/Project/Training Data/DEM mosaic/mosaic_dem_resampled.tif"
         with rasterio.open(dem_path) as dem_src:
@@ -260,18 +249,17 @@ def batch_predict_all():
             dem_band = np.expand_dims(dem_data, axis=0)
             data = np.concatenate((data, dem_band), axis=0)
 
-            # Add slope and aspect
+            # Add aspect
             pixel_size = 10  # meters for Sentinel-2
-            slope, aspect = calculate_slope_aspect(dem_data, pixel_size)
-            slope_band = np.expand_dims(slope, axis=0)
+            _, aspect = calculate_slope_aspect(dem_data, pixel_size)
             aspect_band = np.expand_dims(aspect, axis=0)
-            data = np.concatenate((data, slope_band, aspect_band), axis=0)
+            data = np.concatenate((data, aspect_band), axis=0)
 
             X = data.reshape(data.shape[0], -1).T
             preds = model.predict(X)
             pred_image = preds.reshape(height, width)
 
-            meta.update(count=1, dtype='int32')
+            meta.update({"count":1, "dtype":'int32', "nodata":-9999})
             os.makedirs(output_dir, exist_ok=True)
             with rasterio.open(class_output_path, 'w', **meta) as dst:
                 dst.write(pred_image.astype('int32'), 1)
@@ -385,6 +373,9 @@ def calculate_slope_aspect(dem_array, pixel_size):
 # ---------------------- Main Workflow ---------------------
 # Executes DEM prep, data extraction, model training, and predictions
 def main():
+    txt_report_path = "/Users/brookeengland/Documents/Internship/Project/Random Forest/Output/classification_report.txt"
+    model_name = os.path.basename(model_output_path)
+
     years = [2018, 2019, 2020, 2021, 2022, 2023]    # years for training data
     mosaic_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/'
     slip_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Rasterized/'
@@ -409,7 +400,10 @@ def main():
     X, y = extract_training_data(mosaic_dir, slip_dir, years, n_samples=20000)
 
     print("Training Random Forest classifier...")
-    model = train_rf_classifier(X, y)
+    model = train_rf_classifier(X, y,
+                                txt_report_path=txt_report_path,
+                                model_name=model_name,
+                                dataset_years=years)
 
     print("Saving Trained Model...")
     os.makedirs(os.path.dirname(model_output_path), exist_ok=True)
