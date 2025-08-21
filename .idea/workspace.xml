@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="Update to include NDVI in rapideye masking, change cloud score to NIR alone (no red edge)">
+    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="Update to reinclude red-edge in rapideye processing, change cloud score threshold">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cloud_clear/planetscope_4band.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/planetscope_4band.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cloud_clear/rapideye.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/rapideye.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -45,25 +46,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.file_name_change.executor": "Run",
-    "Python.planetscope_4band.executor": "Run",
-    "Python.process_cloudmask.executor": "Run",
-    "Python.rapideye.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/ewil195/PycharmProjects/aotea_landslides",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.file_name_change.executor&quot;: &quot;Run&quot;,
+    &quot;Python.planetscope_4band.executor&quot;: &quot;Run&quot;,
+    &quot;Python.process_cloudmask.executor&quot;: &quot;Run&quot;,
+    &quot;Python.rapideye.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ewil195/PycharmProjects/aotea_landslides&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -87,7 +88,8 @@
       <workItem from="1752703115567" duration="202000" />
       <workItem from="1752703481576" duration="47351000" />
       <workItem from="1753757109642" duration="710000" />
-      <workItem from="1754948499903" duration="9744000" />
+      <workItem from="1754948499903" duration="9800000" />
+      <workItem from="1755232862335" duration="8368000" />
     </task>
     <task id="LOCAL-00001" summary="Tuesday Updates">
       <option name="closed" value="true" />
@@ -169,7 +171,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754979669923</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Update to reinclude red-edge in rapideye processing, change cloud score threshold">
+      <option name="closed" value="true" />
+      <created>1755046641795</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1755046641795</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -193,11 +203,12 @@
     <MESSAGE value="Split median into windows for memory, do not generate files that are already made" />
     <MESSAGE value="Full test with window updates - working to generate outputs that required large memory" />
     <MESSAGE value="Update to include NDVI in rapideye masking, change cloud score to NIR alone (no red edge)" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update to include NDVI in rapideye masking, change cloud score to NIR alone (no red edge)" />
+    <MESSAGE value="Update to reinclude red-edge in rapideye processing, change cloud score threshold" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update to reinclude red-edge in rapideye processing, change cloud score threshold" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Mosaicking_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1754990932239" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Mosaicking_py$rapideye.coverage" NAME="rapideye Coverage Results" MODIFIED="1750640658372" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
+    <SUITE FILE_PATH="coverage/Mosaicking_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1755652574569" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Mosaicking_py$rapideye.coverage" NAME="rapideye Coverage Results" MODIFIED="1755561142739" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
     <SUITE FILE_PATH="coverage/Mosaicking_py$planetscope_4band.coverage" NAME="planetscope_4band Coverage Results" MODIFIED="1754979572742" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
     <SUITE FILE_PATH="coverage/Mosaicking_py$file_name_change.coverage" NAME="file_name_change Coverage Results" MODIFIED="1752705389533" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
   </component>

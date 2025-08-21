@@ -57,12 +57,13 @@ class RapidEye(CloudClearBase):
         score = np.minimum(score, visible_score)
         
         # Brightness in NIR # used to include RedEdge (+ rededge)
-        nir_score = (np.clip(nir + rededge, 0.3, 0.8) - 0.3) / 0.5
+        nir_score = (np.clip(nir + rededge, 0.15, 0.8) - 0.15) / 0.65
         score = np.minimum(score, nir_score)
 
-        ndvi = self.calc_ndvi(nir, red)
-        ndvi_mask = ndvi < 0.1
-        score = np.minimum(score, ndvi_mask)
+        # # Including NDVI made the cloud score perform worse. The code is included below if further testing is desired.
+        # ndvi = self.calc_ndvi(nir, red)
+        # ndvi_mask = ndvi < 0.1
+        # score = np.minimum(score, ndvi_mask)
 
         return score
 
@@ -190,8 +191,8 @@ class RapidEye(CloudClearBase):
         # Compute cloud score
         cloud_score = self._calculate_cloud_score(scaled_data)
 
-        # Define threshold - pixels with score > 0.05 are considered cloudy
-        cloud_mask = cloud_score > 0.05
+        # Define threshold - pixels with score > 0.1 are considered cloudy
+        cloud_mask = cloud_score > 0.1
 
         # Get dark pixel mask using scaled data
         dark_pixel_mask = self._mask_dark_pixels(scaled_data)
@@ -259,8 +260,8 @@ class RapidEye(CloudClearBase):
         # Compute cloud score
         cloud_score = self._calculate_cloud_score(scaled_data)
 
-        # Threshold - pixels with score > 0.05 are considered cloudy
-        cloud_mask = cloud_score > 0.05
+        # Threshold - pixels with score > 0.1 are considered cloudy
+        cloud_mask = cloud_score > 0.1
 
         # Get dark pixel mask using scaled data
         dark_pixel_mask = self._mask_dark_pixels(scaled_data)
@@ -323,7 +324,7 @@ class RapidEye(CloudClearBase):
 
         # Compute cloud score
         cloud_score = self._calculate_cloud_score(scaled_data)
-        cloud_mask = cloud_score > 0.2
+        cloud_mask = cloud_score > 0.1
         #cloud_mask_buffered = binary_dilation(cloud_mask, iterations=buffer_size)
 
         # Dark pixel mask

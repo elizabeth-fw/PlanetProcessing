@@ -49,15 +49,15 @@ def main():
             image_pattern = f"{folder}/REOrthoTile/*Analytic_SR_clip_file_format.tif"
 
         # ------ Planet Scope ------
-        # elif 'psscene_analytic_8b_sr_udm2' in folder.lower(): # 8 band
-        #     processor_class = PlanetScope8Band
-        #     subfolder = "PlanetScope8Band"
-        #     image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_8b_harmonized_clip_file_format.tif"
-        #
-        # elif 'psscene_analytic_sr_udm2' in folder.lower(): # 4 Band
-        #     processor_class = PlanetScope4Band
-        #     subfolder = "PlanetScope4Band"
-        #     image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_harmonized_clip_file_format.tif"
+        elif 'psscene_analytic_8b_sr_udm2' in folder.lower(): # 8 band
+            processor_class = PlanetScope8Band
+            subfolder = "PlanetScope8Band"
+            image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_8b_harmonized_clip_file_format.tif"
+
+        elif 'psscene_analytic_sr_udm2' in folder.lower(): # 4 Band
+            processor_class = PlanetScope4Band
+            subfolder = "PlanetScope4Band"
+            image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_harmonized_clip_file_format.tif"
 
         else:
             print(f"Unsupported folder: {folder}. Skipping.")

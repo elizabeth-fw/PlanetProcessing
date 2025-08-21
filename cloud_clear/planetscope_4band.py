@@ -55,7 +55,7 @@ class PlanetScope4Band(CloudClearBase):
         score = np.minimum(score, visible_score)
 
         # Brightness in NIR
-        nir_score = (np.clip(nir, 0.15, 0.8) - 0.15) / 0.65    # Might need updating
+        nir_score = (np.clip(nir, 0.15, 0.8) - 0.15) / 0.65    # May need updating, best values for RE
         score = np.minimum(score, nir_score)
 
         return score
