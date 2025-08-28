@@ -43,8 +43,8 @@ from rasterio.mask import mask
 from rasterio.warp import reproject, Resampling
 
 # ---------------- File Paths ------------------
-model_output_path = '/Users/brookeengland/Documents/Internship/Project/Random Forest/Output/S2_multiyear_rf_model.pkl'
-prediction_output_dir = '/Users/brookeengland/Documents/Internship/Project/Random Forest/Predictions/Batch'
+model_output_path = 'X:/Aotea/Random_forest/Output/S2_multiyear_rf_model.pkl'
+prediction_output_dir = 'X:/Aotea/Random_forest/Predictions/Batch'
 
 # ----------------- Configuration ----------------
 invalid_class = 9
@@ -111,7 +111,7 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
     y_all = []
 
     # Load DEM
-    dem_path = "/Users/brookeengland/Documents/Internship/Project/Training Data/DEM mosaic/mosaic_dem_resampled.tif"
+    dem_path = "X:/Aotea/Random_forest/Training_data/mosaic_dem_resampled.tif"
     with rasterio.open(dem_path) as dem_src:
         dem_data = dem_src.read(1)
 
@@ -214,8 +214,8 @@ def train_rf_classifier(X, y):
 #   - Applies trained model across full raster
 #   - Saves prediction as GeoTIFF
 def batch_predict_all():
-    mosaic_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/'
-    output_dir = '/Users/brookeengland/Documents/Internship/Project/Random Forest/Predictions/Batch'
+    mosaic_dir = 'X:/Aotea/Random_forest/Training_data/Aotea_S2/'
+    output_dir = 'X:/Aotea/Random_forest/Predictions/Batch'
 
     print(f"\nRunning batch predictions from: {mosaic_dir}")
     model = joblib.load(model_output_path)
@@ -249,7 +249,7 @@ def batch_predict_all():
             data = np.concatenate((data, ndvi), axis=0)
 
         # Add DEM
-        dem_path = "/Users/brookeengland/Documents/Internship/Project/Training Data/DEM mosaic/mosaic_dem_resampled.tif"
+        dem_path = "X:/Aotea/Random_forest/Training_data/DEM/mosaic_dem_resampled.tif"
         with rasterio.open(dem_path) as dem_src:
             dem_data = dem_src.read(1)
 
@@ -386,19 +386,19 @@ def calculate_slope_aspect(dem_array, pixel_size):
 # Executes DEM prep, data extraction, model training, and predictions
 def main():
     years = [2018, 2019, 2020, 2021, 2022, 2023]    # years for training data
-    mosaic_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/'
-    slip_dir = '/Users/brookeengland/Documents/Internship/Project/Training Data/Rasterized/'
+    mosaic_dir = 'X:/Aotea/Random_forest/Training_data/Aotea_S2/'
+    slip_dir = 'X:/Aotea/Random_forest/Training_data/Rasterized/'
 
     # DEM mosaic
-    mosaic_dems("/Users/brookeengland/Documents/Internship/Project/Training Data/lds-new-zealand-lidar-1m-dem-GTiff",
-                "/Users/brookeengland/Documents/Internship/Project/Training Data/DEM mosaic/mosaic_dem.tif")
+    mosaic_dems("X:/Aotea/Random_forest/Training_data/DEM/DEM_1m_aotea",
+                "X:/Aotea/Random_forest/Training_data/DEM/mosaic_dem.tif")
 
-    clip_raster("/Users/brookeengland/Documents/Internship/Project/Training Data/DEM mosaic/mosaic_dem.tif",
-                "/Users/brookeengland/Documents/Internship/Project/Planet/aotea/aotea.shp",
-                "/Users/brookeengland/Documents/Internship/Project/Training Data/DEM mosaic/mosaic_dem_clipped.tif")
+    clip_raster("X:/Aotea/Random_forest/Training_data/mosaic_dem.tif",
+                "X:/Aotea/Planet/AOI/aotea.shp",
+                "X:/Aotea/Random_forest/Training_data/mosaic_dem_clipped.tif")
 
     # Resample DEM to match one of the Sentinel-2 mosaics
-    reference_mosaic = "/Users/brookeengland/Documents/Internship/Project/Training Data/Aotea_S2/S2_mosaic_2018.tif"
+    reference_mosaic = "X:/Aotea/Random_forest/Training_data/Aotea_S2/S2_mosaic_2018.tif"
     resample_raster_to_match(
         src_path="/Users/brookeengland/Documents/Internship/Project/Training Data/DEM mosaic/mosaic_dem_clipped.tif",
         target_path=reference_mosaic,
