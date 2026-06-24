@@ -2,7 +2,7 @@ import os
 import re
 
 # directory containing files
-directory = 'Z:/Raw_data/Aotea/Planet/2015-planet_reorthotile_analytic_sr/REOrthoTile' # change to actual file path
+directory = 'X:/Coromandel/Planet/2015-planet-coro_reorthotile_analytic_sr/REOrthoTile' # change to actual file path
 
 # Patterns
 metadata_pattern = re.compile(r"(\d{8})_(\d{6})_(\d+)_([^_]+)_metadata\.json")

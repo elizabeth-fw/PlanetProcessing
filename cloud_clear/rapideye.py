@@ -56,7 +56,8 @@ class RapidEye(CloudClearBase):
         visible_score = (np.clip(red + green + blue, 0.1, 0.8) - 0.1) / 0.7
         score = np.minimum(score, visible_score)
         
-        # Brightness in NIR # used to include RedEdge (+ rededge)
+        # Brightness in NIR + rededge
+        # Keep rededge in place of non-existent swir as it performs better than without it
         nir_score = (np.clip(nir + rededge, 0.15, 0.8) - 0.15) / 0.65
         score = np.minimum(score, nir_score)
 

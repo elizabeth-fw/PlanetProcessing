@@ -5,17 +5,82 @@ import os
 import re
 import numpy as np
 import rasterio
+import rasterio.errors
+import time
+import functools
+
 
 from cloud_clear.rapideye import RapidEye
 from cloud_clear.planetscope_4band import PlanetScope4Band
 from cloud_clear.planetscope_8band import PlanetScope8Band
 from compositing import create_median_composite
 
+# =========================
+# 🔁 RETRY DECORATOR
+# =========================
+def retry_on_io_failure(timeout=3600, delay=30):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            attempt = 1
+
+            while True:
+                try:
+                    return func(*args, **kwargs)
+
+                except (OSError, IOError, rasterio.errors.RasterioIOError) as e:
+                    elapsed = time.time() - start_time
+
+                    if elapsed > timeout:
+                        print(f"[FAIL] {func.__name__} exceeded retry timeout ({timeout}s)")
+                        raise
+
+                    print(f"[RETRY {attempt}] {func.__name__} failed: {e}")
+                    print(f"Waiting {delay}s before retrying...")
+
+                    # Wait until drive comes back
+                    while not os.path.exists("X:/"):
+                        print("Drive unavailable. Waiting 30s...")
+                        time.sleep(30)
+
+                    time.sleep(delay)
+                    attempt += 1
+
+        return wrapper
+    return decorator
+
+# =========================
+# 🔒 SAFE WRAPPERS
+# =========================
+@retry_on_io_failure()
+def open_raster(path):
+    return rasterio.open(path)
+
+
+@retry_on_io_failure()
+def safe_clip(processor, file, mode):
+    return processor.reproject_and_clip(file, mode)
+
+
+@retry_on_io_failure()
+def safe_composite(files, output_path, aoi):
+    return create_median_composite(files, output_path, aoi=aoi)
+
+
+@retry_on_io_failure()
+def safe_mosaic(image_paths, output_path):
+    mosaic_images(image_paths, output_path)
+
+
+# =========================
+# MAIN PROCESSING
+# =========================
 def main():
     # Define directories
-    base_dir = "X:/Aotea/Planet/"
-    output_base_dir = "X:/Aotea/Planet/Output"
-    aoi = gpd.read_file('X:/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
+    base_dir = "X:/Coromandel/Planet/"
+    output_base_dir = "X:/Coromandel/Planet/Output"
+    aoi = gpd.read_file('X:/Coromandel/Planet/AOI/coromandel_thames.shp').to_crs('EPSG:2193')
 
     # Create output subfolders
     os.makedirs(os.path.join(output_base_dir, "RapidEye"), exist_ok=True)
@@ -43,13 +108,13 @@ def main():
         year = match.group(1)
 
         # --------- Rapid Eye -----------
-        if 'reorthotile_analytic_sr' in folder.lower():
-            processor_class = RapidEye
-            subfolder = "RapidEye"
-            image_pattern = f"{folder}/REOrthoTile/*Analytic_SR_clip_file_format.tif"
+        # if 'reorthotile_analytic_sr' in folder.lower():
+        #     processor_class = RapidEye
+        #     subfolder = "RapidEye"
+        #     image_pattern = f"{folder}/REOrthoTile/*Analytic_SR_clip_file_format.tif"
 
         # ------ Planet Scope ------
-        elif 'psscene_analytic_8b_sr_udm2' in folder.lower(): # 8 band
+        if 'psscene_analytic_8b_sr_udm2' in folder.lower(): # 8 band
             processor_class = PlanetScope8Band
             subfolder = "PlanetScope8Band"
             image_pattern = f"{folder}/PSScene/*AnalyticMS_SR_8b_harmonized_clip_file_format.tif"
@@ -95,10 +160,10 @@ def main():
                 continue
 
             # Process Analytic file
-            analytic_clipped = processor.reproject_and_clip(file, 'analytic')
+            analytic_clipped = safe_clip(processor, file, 'analytic')
 
             # Process UDM file
-            udm_clipped = processor.reproject_and_clip(udm_file, 'udm')
+            udm_clipped = safe_clip(processor, udm_file, 'udm')
 
             # Check alignment
             if not processor.check_file_properties(analytic_clipped, udm_clipped):
@@ -180,7 +245,7 @@ def create_composites(output_dir, aoi):
             continue
 
         print(f"Creating composite for {mask_type} mask in {year} from {len(files)} images....")
-        if create_median_composite(files, composite_path, aoi=aoi):
+        if safe_composite(files, composite_path, aoi=aoi):
             print(f"Composite created: {composite_path}")
             created_count += 1
 
@@ -192,7 +257,7 @@ def mosaic_images(image_paths, output_path, nodata_val=-9999):
     meta = None
 
     for path in image_paths:
-        with rasterio.open(path) as src:
+        with open_raster(path) as src:
             data = src.read().astype(np.float32)
             if meta is None:
                 meta = src.meta.copy()
@@ -236,7 +301,7 @@ def create_mosaic(output_dir):
     for year, files in composites_by_year.items():
         # Prioritize specific composites
         priority_files = []
-        for name in ["udmbuffer_highcsbuffer", "udm_lowcsbuffer", "udmbuffer"]:
+        for name in ["udmbuffer_highcsbuffer", "udm_lowcsbuffer", "udmbuffer"]: #"udmbuffer", "udm"
             matches = [
                 f for f in files
                     if f"median_{name}_comp_" in os.path.basename(f)
@@ -266,11 +331,10 @@ def create_mosaic(output_dir):
             print(f"Mosaic already exists: {mosaic_output_path}. Skipping.")
             continue
 
-        mosaic_images(priority_files, mosaic_output_path)
-
+        safe_mosaic(priority_files, mosaic_output_path)
 
 if __name__ == "__main__":
-    aoi = gpd.read_file('X:/Aotea/Planet/AOI/aotea.shp').to_crs('EPSG:2193')
+    aoi = gpd.read_file('X:/Coromandel/Planet/AOI/coromandel_thames.shp').to_crs('EPSG:2193')
     main()
-    create_composites("X:/Aotea/Planet/Output", aoi)
-    create_mosaic("X:/Aotea/Planet/Output")
+    create_composites("X:/Coromandel/Planet/Output", aoi)
+    create_mosaic("X:/Coromandel/Planet/Output")

@@ -60,8 +60,8 @@ def log_to_csv(log_path, row, headers=None):
 
 
 # ---------------- File Paths ------------------
-model_output_path = 'X:/Aotea/Random_forest/Sentinel/Output/S2_multiyear_rf_model.pkl'
-prediction_output_dir = 'X:/Aotea/Random_forest/Sentinel/Predictions/Batch'
+model_output_path = 'X:/Aotea/Random_forest/Landsat/Output/S2_multiyear_rf_model.pkl'
+prediction_output_dir = 'X:/Aotea/Random_forest/Landsat/Predictions/Batch'
 
 # ----------------- Configuration ----------------
 invalid_class = 9
@@ -174,7 +174,7 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
     y_all = []
 
     # Load DEM
-    dem_path = "X:/Aotea/Random_forest/Sentinel/Training_data/DEM/mosaic_dem_resampled.tif"
+    dem_path = "X:/Aotea/Random_forest/Landsat/Training_data/DEM/mosaic_dem_resampled.tif"
     with rasterio.open(dem_path) as dem_src:
         dem_data = dem_src.read(1)
 
@@ -183,8 +183,8 @@ def extract_training_data(mosaic_dir, slip_dir, years, n_samples=5000):
         mosaic_path = os.path.join(mosaic_dir, f'S2_mosaic_{year}.tif')
         slip_path = os.path.join(slip_dir, f'S2_{year}_rasterized_slips.tif')
         filtered_path = os.path.join(slip_dir, f'S2_{year}_filtered_slips.tif')
-        gpkg_path = 'X:/Aotea/Random_forest/Sentinel/Training_data/S2/S2_slips.gpkg'
-        layer_name = f'S2_{year}_slips'  # Layer name must match this format
+        gpkg_path = 'X:/Aotea/Random_forest/Landsat/Training_data/L89/L89_slips.gpkg'
+        layer_name = f'L89_{year}_slips'  # Layer name must match this format
 
         # Rasterize slips if raster doesn't already exist
         if not os.path.exists(slip_path):
@@ -274,14 +274,12 @@ def train_rf_classifier(X, y, txt_report_path=None, model_name=None, dataset_yea
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=test_size, random_state=42)
 
     # Build Random Forest Model
-    print('Starting RF...')
     clf = RandomForestClassifier(
         n_estimators=n_estimators,
         class_weight='balanced',
         random_state=42
     )
     # Fit model
-    print('Fitting RF...')
     clf.fit(X_train, y_train)
 
     # Make Predictions
@@ -339,8 +337,8 @@ def save_ndvi_raster(ndvi_array, meta, output_path):
 #   - Applies trained model across full raster
 #   - Saves prediction as GeoTIFF
 def batch_predict_all():
-    mosaic_dir = 'X:/Aotea/Random_forest/Sentinel/Training_data/S2/'
-    output_dir = 'X:/Aotea/Random_forest/Sentinel/Predictions/Batch'
+    mosaic_dir = 'X:/Aotea/Random_forest/Landsat/Training_data/S2/'
+    output_dir = 'X:/Aotea/Random_forest/Landsat/Predictions/Batch'
 
     print(f"\nRunning batch predictions from: {mosaic_dir}")
     model = joblib.load(model_output_path)
@@ -379,7 +377,7 @@ def batch_predict_all():
             data = np.concatenate((data, ndvi), axis=0)
 
         # Add DEM
-        dem_path = "X:/Aotea/Random_forest/Sentinel/Training_data/DEM/mosaic_dem_resampled.tif"
+        dem_path = "X:/Aotea/Random_forest/Landsat/Training_data/DEM/mosaic_dem_resampled.tif"
         with rasterio.open(dem_path) as dem_src:
             dem_data = dem_src.read(1)
 
@@ -455,7 +453,7 @@ def clip_raster(raster_path, shapefile_path, output_path):
             dest.write(out_image)
 
 
-# resample_raster_to_match() - Matches DEM resolution to S2 mosaics
+# resample_raster_to_match() - Matches DEM resolution to Landsat mosaics
 def resample_raster_to_match(src_path, target_path, output_path):
     with rasterio.open(src_path) as src:
         src_data = src.read(1)
@@ -515,27 +513,27 @@ def calculate_slope_aspect(dem_array, pixel_size):
 # ---------------------- Main Workflow ---------------------
 # Executes DEM prep, data extraction, model training, and predictions
 def main():
-    txt_report_path = "X:/Aotea/Random_forest/Sentinel/Output/classification_report.txt"
+    txt_report_path = "X:/Aotea/Random_forest/Landsat/Output/classification_report.txt"
     model_name = os.path.basename(model_output_path)
 
     years = [2018, 2019, 2020, 2021, 2022, 2023] # years for training data
-    mosaic_dir = 'X:/Aotea/Random_forest/Sentinel/Training_data/S2/'
-    slip_dir = 'X:/Aotea/Random_forest/Sentinel/Training_data/Rasterized/'
+    mosaic_dir = 'X:/Aotea/Random_forest/Landsat/Training_data/S2/'
+    slip_dir = 'X:/Aotea/Random_forest/Landsat/Training_data/Rasterized/'
 
-    ## DEM mosaic
-    # mosaic_dems("X:/Aotea/Random_forest/Sentinel/Training_data/DEM/DEM_1m_aotea",
-    #             "X:/Aotea/Random_forest/Sentinel/Training_data/DEM/mosaic_dem.tif")
+    # DEM mosaic
+    mosaic_dems("X:/Aotea/Random_forest/Landsat/Training_data/DEM/DEM_1m_aotea",
+                "X:/Aotea/Random_forest/Landsat/Training_data/DEM/mosaic_dem.tif")
 
-    clip_raster("X:/Aotea/Random_forest/Sentinel/Training_data/DEM/mosaic_dem.tif",
+    clip_raster("X:/Aotea/Random_forest/Landsat/Training_data/DEM/mosaic_dem.tif",
                 "X:/Aotea/Planet/AOI/aotea.shp",
-                "X:/Aotea/Random_forest/Sentinel/Training_data/DEM/mosaic_dem_clipped.tif")
+                "X:/Aotea/Random_forest/Landsat/Training_data/DEM/mosaic_dem_clipped.tif")
 
     # Resample DEM to match one of the Sentinel-2 mosaics
-    reference_mosaic = "X:/Aotea/Random_forest/Sentinel/Training_data/S2/S2_mosaic_2018.tif"
+    reference_mosaic = "X:/Aotea/Random_forest/Landsat/Training_data/S2/S2_mosaic_2018.tif"
     resample_raster_to_match(
-        src_path="X:/Aotea/Random_forest/Sentinel/Training_data/DEM/mosaic_dem_clipped.tif",
+        src_path="X:/Aotea/Random_forest/Landsat/Training_data/DEM/mosaic_dem_clipped.tif",
         target_path=reference_mosaic,
-        output_path="X:/Aotea/Random_forest/Sentinel/Training_data/DEM/mosaic_dem_resampled.tif"
+        output_path="X:/Aotea/Random_forest/Landsat/Training_data/DEM/mosaic_dem_resampled.tif"
     )
 
     print("Extracting multi-year training data...")
@@ -553,7 +551,7 @@ def main():
     print(f"Saved model to {model_output_path}")
 
     # Save accuracy to JSON file
-    accuracy_json_path = "X:/Aotea/Random_forest/Sentinel/Output/model_accuracy.json"
+    accuracy_json_path = "X:/Aotea/Random_forest/Landsat/Output/model_accuracy.json"
     with open(accuracy_json_path, "w") as f:
         json.dump({"accuracy": accuracy}, f)
     print(f"Saved model accuracy to {accuracy_json_path}")

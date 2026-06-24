@@ -4,9 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="cloud score threshold of .1 performs generally best">
+    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="update RF folders">
+      <change afterPath="$PROJECT_DIR$/Random Forest/RandomForest_Landsat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cloud_clear/planetscope_4band.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/planetscope_4band.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Random Forest/RandomForest.py" beforeDir="false" afterPath="$PROJECT_DIR$/Random Forest/RandomForest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cloud_clear/file_name_change.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/file_name_change.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cloud_clear/rapideye.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/rapideye.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/process_cloudmask.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_cloudmask.py" afterDir="false" />
     </list>
@@ -28,7 +31,7 @@
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
     &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;brookeengland&quot;
+    &quot;assignee&quot;: &quot;elizabeth-fw&quot;
   }
 }</component>
   <component name="GithubPullRequestsUISettings">
@@ -38,6 +41,9 @@
         <option name="url" value="https://github.com/elizabeth-fw/PlanetProcessing.git" />
       </UrlAndAccount>
     </option>
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -49,8 +55,11 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Python.RandomForest.executor&quot;: &quot;Run&quot;,
+    &quot;Python.compositing.executor&quot;: &quot;Run&quot;,
     &quot;Python.file_name_change.executor&quot;: &quot;Run&quot;,
     &quot;Python.planetscope_4band.executor&quot;: &quot;Run&quot;,
+    &quot;Python.planetscope_8band.executor&quot;: &quot;Run&quot;,
     &quot;Python.process_cloudmask.executor&quot;: &quot;Run&quot;,
     &quot;Python.rapideye.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
@@ -64,8 +73,43 @@
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;PLAIN_TEXT&quot;
+    ]
   }
 }</component>
+  <component name="RunManager">
+    <configuration name="RandomForest" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PlanetProcessing" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Random Forest" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Random Forest/RandomForest.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.RandomForest" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -90,7 +134,23 @@
       <workItem from="1752703481576" duration="47351000" />
       <workItem from="1753757109642" duration="710000" />
       <workItem from="1754948499903" duration="9800000" />
-      <workItem from="1755232862335" duration="8529000" />
+      <workItem from="1755232862335" duration="8994000" />
+      <workItem from="1756349281968" duration="15855000" />
+      <workItem from="1764564123666" duration="19754000" />
+      <workItem from="1765181930943" duration="1321000" />
+      <workItem from="1765337878942" duration="20591000" />
+      <workItem from="1767740294124" duration="10000" />
+      <workItem from="1767907838881" duration="34687000" />
+      <workItem from="1769990145489" duration="11386000" />
+      <workItem from="1773697031524" duration="14120000" />
+      <workItem from="1774333179810" duration="1223000" />
+      <workItem from="1774483808614" duration="14845000" />
+      <workItem from="1779924781949" duration="5349000" />
+      <workItem from="1779948208133" duration="179000" />
+      <workItem from="1779948406870" duration="2000" />
+      <workItem from="1779948485044" duration="21391000" />
+      <workItem from="1782094012279" duration="186000" />
+      <workItem from="1782342810937" duration="50000" />
     </task>
     <task id="LOCAL-00001" summary="Tuesday Updates">
       <option name="closed" value="true" />
@@ -188,7 +248,23 @@
       <option name="project" value="LOCAL" />
       <updated>1755745399442</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="remove now unused cloudmasking script">
+      <option name="closed" value="true" />
+      <created>1755745517514</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1755745517514</updated>
+    </task>
+    <task id="LOCAL-00014" summary="update RF folders">
+      <option name="closed" value="true" />
+      <created>1756355755284</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1756355755284</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -199,7 +275,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -214,12 +302,23 @@
     <MESSAGE value="Update to include NDVI in rapideye masking, change cloud score to NIR alone (no red edge)" />
     <MESSAGE value="Update to reinclude red-edge in rapideye processing, change cloud score threshold" />
     <MESSAGE value="cloud score threshold of .1 performs generally best" />
-    <option name="LAST_COMMIT_MESSAGE" value="cloud score threshold of .1 performs generally best" />
+    <MESSAGE value="remove now unused cloudmasking script" />
+    <MESSAGE value="update RF folders" />
+    <option name="LAST_COMMIT_MESSAGE" value="update RF folders" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Mosaicking_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1755652574569" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Mosaicking_py$rapideye.coverage" NAME="rapideye Coverage Results" MODIFIED="1755561142739" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
+    <SUITE FILE_PATH="coverage/compositing_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1774333182424" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/compositing_py$planetscope_8band.coverage" NAME="planetscope_8band Coverage Results" MODIFIED="1765947731651" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
+    <SUITE FILE_PATH="coverage/process_cloudmask_py$file_name_change.coverage" NAME="file_name_change Coverage Results" MODIFIED="1764628205861" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
+    <SUITE FILE_PATH="coverage/process_cloudmask_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1781155077554" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Mosaicking_py$planetscope_4band.coverage" NAME="planetscope_4band Coverage Results" MODIFIED="1754979572742" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
     <SUITE FILE_PATH="coverage/Mosaicking_py$file_name_change.coverage" NAME="file_name_change Coverage Results" MODIFIED="1752705389533" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
+    <SUITE FILE_PATH="coverage/Mosaicking_py$RandomForest.coverage" NAME="RandomForest Coverage Results" MODIFIED="1756430628526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Random Forest" />
+    <SUITE FILE_PATH="coverage/compositing_py$compositing.coverage" NAME="compositing Coverage Results" MODIFIED="1765337995154" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/RandomForest_py$RandomForest.coverage" NAME="RandomForest Coverage Results" MODIFIED="1779936364798" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Random Forest" />
+    <SUITE FILE_PATH="coverage/Mosaicking_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1755652574569" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/RandomForest_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1775093848065" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/compositing_py$RandomForest.coverage" NAME="RandomForest Coverage Results" MODIFIED="1779948340661" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Random Forest" />
+    <SUITE FILE_PATH="coverage/Mosaicking_py$rapideye.coverage" NAME="rapideye Coverage Results" MODIFIED="1755561142739" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cloud_clear" />
   </component>
 </project>
