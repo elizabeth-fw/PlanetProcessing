@@ -4,15 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="update RF folders">
-      <change afterPath="$PROJECT_DIR$/Random Forest/RandomForest_Landsat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Random Forest/RandomForest.py" beforeDir="false" afterPath="$PROJECT_DIR$/Random Forest/RandomForest.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cloud_clear/file_name_change.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/file_name_change.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cloud_clear/rapideye.py" beforeDir="false" afterPath="$PROJECT_DIR$/cloud_clear/rapideye.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/process_cloudmask.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_cloudmask.py" afterDir="false" />
-    </list>
+    <list default="true" id="37c76a8e-8610-4780-b1e3-40ad5045a80d" name="Changes" comment="update cloudmask and RF landsat" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -150,7 +142,7 @@
       <workItem from="1779948406870" duration="2000" />
       <workItem from="1779948485044" duration="21391000" />
       <workItem from="1782094012279" duration="186000" />
-      <workItem from="1782342810937" duration="50000" />
+      <workItem from="1782342810937" duration="116000" />
     </task>
     <task id="LOCAL-00001" summary="Tuesday Updates">
       <option name="closed" value="true" />
@@ -264,7 +256,15 @@
       <option name="project" value="LOCAL" />
       <updated>1756355755284</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="update cloudmask and RF landsat">
+      <option name="closed" value="true" />
+      <created>1782342895336</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1782342895336</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -304,7 +304,8 @@
     <MESSAGE value="cloud score threshold of .1 performs generally best" />
     <MESSAGE value="remove now unused cloudmasking script" />
     <MESSAGE value="update RF folders" />
-    <option name="LAST_COMMIT_MESSAGE" value="update RF folders" />
+    <MESSAGE value="update cloudmask and RF landsat" />
+    <option name="LAST_COMMIT_MESSAGE" value="update cloudmask and RF landsat" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/compositing_py$process_cloudmask.coverage" NAME="process_cloudmask Coverage Results" MODIFIED="1774333182424" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
